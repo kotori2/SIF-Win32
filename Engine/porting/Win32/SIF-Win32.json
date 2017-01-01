@@ -1,0 +1,58 @@
+// This is SIF-Win32 configuration file. Edit if necessary
+// SIF-Win32. Windows port of Love Live! School Idol Festival
+
+{
+	// Allow keyboard support in SIF-Win32. True by default.
+	// Disable if you're using touchscreen to play or you're using Tablet PC which is lack of keyboard.
+	"AllowKeyboard": true,
+	
+	// VirtualKeyIdol maps your keyboard input to the one of the idol circle in Live Show!
+	// It's "4, R, F, V, B, N, J, I, 9" by default. However, you can configure it to different
+	// keys if necessary by using virtual key number. List of VKs can be found here:
+	// https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
+	//
+	// Because JSON datatype, you must convert the hexadecimal to decimal.
+	// String representation of VK (like "VK_LBUTTON" is not supported).
+	// NOTE: The idol order is from left to right!
+	// NOTE: You may not want to use some keys (like "Backspace")!
+	"VirtualKeyIdol": [
+		52,		// 4
+		82,		// R
+		70,		// F
+		86,		// V
+		66,		// B
+		78,		// N
+		74,		// J
+		73,		// I
+		57		// 9
+	],
+	
+	// Allow touchscreen support in SIF-Win32. True by default
+	// Touchscreen support only available for devices with multitouch support and run at
+	// least Windows 7 operating system. This setting is useless if 2 conditions above doesn't meet.
+	// Disable only if very necessary (e.g: broken touchscreen) because it should not affect performance.
+	"AllowTouchscreen": true,
+	
+	// Run the game in "Debug" mode. False by default
+	// Debug mode shows bit more detailed information like the error message when a request fails.
+	// Debug mode also shows more information when downloading data and skips the splash screen.
+	// This option can be overridden with `-no release` command line which sets "Debug" mode to "on" regardless of this config.
+	"DebugMode": false,
+	
+	// Run the program in single-core CPU. False by default.
+	// Setting this to true can affect performance. However, it can solve some problems.
+	// Example: If you're experiencing crashes or the download progress freezes, set this to true.
+	"SingleCore": false,
+	
+	// Set the "Close" (or "X") button in Window as SIF back button. False by default.
+	// By default, back button is mapped to "Backspace" button and pressing "Close" window button immediately closes SIF.
+	// Setting this to true make it map the back button to "Close" window button and unmap the "Backspace" key.
+	"CloseWindowAsBack": false,
+	
+	// Enable Android Mode to allow account transfers between Android and SIF-Win32 with loveca.
+	// Disable Android Mode to allow account transfers between iOS and SIF-Win32 with loveca.
+	// It does not change how SIF-Win32 berhaves. It just affect used account.
+	"AndroidMode": false
+	
+	// End of configuration file.
+}
