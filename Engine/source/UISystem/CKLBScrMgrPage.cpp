@@ -117,7 +117,7 @@ CKLBScrMgrPage::getBarPosition()
 void
 CKLBScrMgrPage::execute(u32 /* deltaT */)
 {
-	if((int)(abs(m_posTarget)) == (int)(abs(m_posNow) + 0.05f)) {
+	if((int)(abs((int)m_posTarget)) == (int)(abs((int)m_posNow) + 0.05f)) {
 		m_posNow = m_posTarget;
 		m_mvDir  = 0;
 		m_speed  = 0.0f;

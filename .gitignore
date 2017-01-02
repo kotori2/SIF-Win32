@@ -54,3 +54,5 @@ project.xcworkspace/
 !libcurl.a
 *.so
 *.dll
+Engine/porting/Win32/OSSGameLibraryWin32.VC.db
+Engine/porting/Win32/OSSGameLibraryWin32.VC.VC.opendb
