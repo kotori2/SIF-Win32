@@ -52,6 +52,8 @@ It's named `GE_Keychain.key` in SIF-Win32.
 
 * `-maximize 1` sets the game to run in (almost) fullscreen.
 
+* `-xmc <code>` to set your own code.
+
 # Account Transfer
 
 * When transfering account created in SIF-Win32 to iOS (and possibility vice versa), you don't need to clear loveca.
