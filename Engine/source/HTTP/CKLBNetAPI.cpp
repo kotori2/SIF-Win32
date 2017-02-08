@@ -261,14 +261,14 @@ void CKLBNetAPI::login(int phase, int status_code)
 	{
 		case 0:
 		{
-			char request_data[256];
+			char request_data[512];
 			char country_code[4];
 			const char* form[2];
 			char* authorize = create_authorize_string(kc.getConsumerKey(), m_nonce, kc.setToken(m_pRoot->child()->child()->getString()));
 		
 			// Request data
 			GetLocaleInfoA(LOCALE_USER_DEFAULT, LOCALE_SISO3166CTRYNAME, country_code, 4);
-			sprintf(request_data, "request_data={\"country_code\": \"%s\",\"login_key\": \"%s\",\"login_passwd\": \"%s\"}", country_code, kc.getLoginKey(), kc.getLoginPw());
+			sprintf(request_data, "request_data={\"login_key\": \"%s\",\"login_passwd\": \"%s\",\"devtoken\":\"APA91bGJEKHGnfimcCaqSdq09geZ3fsWm-asqIBjOjrPGLAsdQXm_sl2xtBv55SNuvaPHCIzobN4oUI8wSNTcT5JVovXDhuEJa5tXH7iejQUXJaqxzGcM47yUjswewBbTGR9ZWYSvmYo\"}",  kc.getLoginKey(), kc.getLoginPw());
 			form[0] = request_data;
 			form[1] = NULL;
 
@@ -653,12 +653,12 @@ void CKLBNetAPI::set_header(CKLBHTTPInterface* http, const char* authorize_strin
 	headers[0] = "API-Model: straightforward";
 	headers[1] = application_id;
 	headers[2] = authorize;
-	headers[3] = bundle_version;
+	headers[3] = "Bundle-Version: 4.2";
 	headers[4] = client_version;
 	headers[5] = "Debug: 1";
-	headers[6] = "OS: Win32";
-	headers[7] = os_version;
-	headers[8] = SIF_Win32::AndroidMode ? "Platform-Type: 2" : "Platform-Type: 3";
+	headers[6] = "OS: Android";
+	headers[7] = "OS-Version: Nexus5 google hammerhead 4.4.4";
+	headers[8] = "Platform-Type: 2";
 	headers[9] = region;
 	headers[10] = time_zone;
 	headers[11] = user_id;
