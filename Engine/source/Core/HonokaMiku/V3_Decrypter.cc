@@ -49,7 +49,7 @@ void HonokaMiku::finalDecryptV3(V3_Dctx* dctx, unsigned int expected_sum_name, c
 
 		for(; *basename != 0; name_sum += *basename, basename++) {}
 
-		if (name_sum == expected_sum)
+		//if (name_sum == expected_sum)
 		{
 			dctx->init_key = dctx->key_tables[name_sum & 0x3F];
 			dctx->update_key = dctx->init_key;
