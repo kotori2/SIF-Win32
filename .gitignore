@@ -56,3 +56,7 @@ project.xcworkspace/
 *.dll
 Engine/porting/Win32/OSSGameLibraryWin32.VC.db
 Engine/porting/Win32/OSSGameLibraryWin32.VC.VC.opendb
+Engine/porting/Debug/
+Engine/porting/Win32/.vs/OSSGameLibraryWin32/v15/Browse.VC.db
+Engine/porting/Win32/.vs/OSSGameLibraryWin32/v15/ipch/AutoPCH/SAMPLEPROJECT-73ef306d/SAMPLEPROJECT-7ea902a4/SAMPLEPROJECT.ipch
+Engine/porting/Win32/.vs/

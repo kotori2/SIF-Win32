@@ -125,7 +125,7 @@ GameSetup()
 
 	// Preload fonts
 	klb_assert(pfif.platform().registerFont("MotoyaLMaru W3 mono", "asset://MTLmr3m.ttf", true), "[LoveLive base] GAME FONT MTLmr3m.ttf NOT INSTALLED");
-	klb_assert(pfif.platform().registerFont("CurrencySymbols", "asset://CurrencySymbols.ttf", false), "[LoveLive base] GAME FONT CurrencySymbols.ttf NOT INSTALLED");
+	//klb_assert(pfif.platform().registerFont("CurrencySymbols", "asset://CurrencySymbols.ttf", false), "[LoveLive base] GAME FONT CurrencySymbols.ttf NOT INSTALLED");
 
 	// Load config
 	klb_assert(ReadConfiguration(), "Unable to read or parse configuration file: SIF-Win32.json");
