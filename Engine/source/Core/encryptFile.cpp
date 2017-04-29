@@ -49,21 +49,20 @@ void CDecryptBaseClass::decrypt(void* ptr, u32 length) {
 
 // Uses part of HonokaMiku 
 u32 CDecryptBaseClass::decryptSetup(const u8* ptr, const u8* hdr) {
-	m_dctx = HonokaMiku::FindSuitable((const char*)ptr, hdr, NULL);
-
+	m_dctx = HonokaMiku::FindSuitable((const char*)ptr, hdr);
 	if(m_dctx == NULL)
 	{
 		DEBUG_PRINT("%s: unsupported encryption scheme", ptr);
-
+		
 		m_useNew = false;
 		m_decrypt = false;
 		m_header_size = 0;
 
 		return 0;
 	}
-
-	if(m_dctx->version == 3)
+	if(m_dctx->version >= 3)
 	{
+		if(ptr)
 		m_header_size = 16;
 		m_dctx->final_setup((const char*)ptr, hdr + 4);
 	}

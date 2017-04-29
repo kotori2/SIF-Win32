@@ -5,7 +5,7 @@
 
 #include "DecrypterContext.h"
 
-static const unsigned int tw_key_tables[64] = {
+static const uint32_t tw_key_tables[64] = {
 	0xA925E518U, 0x5AB9C4A4U, 0x01950558U, 0xACFF7182U,
 	0xE8183331U, 0x9D1B6963U, 0x0B8E9D15U, 0x96DAD0BBU,
 	0x0F941E35U, 0xC968E363U, 0x2058A6AAU, 0x7176BB02U,
@@ -24,16 +24,38 @@ static const unsigned int tw_key_tables[64] = {
 	0x94D63581U, 0x49A7FAD6U, 0x7BEDDD15U, 0xC6913CEDU,
 };
 
-HonokaMiku::TW3_Dctx::TW3_Dctx(const void* header, const char* filename): HonokaMiku::V3_Dctx(HonokaMiku::GetPrefixFromGameId(3), tw_key_tables, header, filename) {}
+////////////////////
+// Version 2 code //
+////////////////////
 
-void HonokaMiku::TW3_Dctx::final_setup(const char* filename, const void* block_rest)
+HonokaMiku::TW2_Dctx::TW2_Dctx(const void* header, const char* filename): V2_Dctx(GetPrefixFromGameType(HONOKAMIKU_GAMETYPE_TW), header, filename) {}
+
+uint32_t HonokaMiku::TW2_Dctx::get_id()
 {
-	finalDecryptV3(this, 1051, filename, block_rest);
+	return HONOKAMIKU_GAMETYPE_TW | HONOKAMIKU_DECRYPT_V2;
 }
 
-HonokaMiku::TW3_Dctx* HonokaMiku::TW3_Dctx::encrypt_setup(const char* filename,void* hdr_out)
+////////////////////
+// Version 3 code //
+////////////////////
+
+HonokaMiku::TW3_Dctx::TW3_Dctx(const void* header, const char* filename): V3_Dctx(GetPrefixFromGameType(HONOKAMIKU_GAMETYPE_TW), header, filename) {}
+
+const uint32_t* HonokaMiku::TW3_Dctx::_getKeyTables() { return tw_key_tables; }
+
+uint32_t HonokaMiku::TW3_Dctx::get_id()
+{
+	return HONOKAMIKU_GAMETYPE_TW | HONOKAMIKU_DECRYPT_V3;
+}
+
+void HonokaMiku::TW3_Dctx::final_setup(const char* filename, const void* block_rest, int force_version)
+{
+	finalDecryptV3(this, 1051, filename, block_rest, force_version);
+}
+
+HonokaMiku::TW3_Dctx* HonokaMiku::TW3_Dctx::encrypt_setup(const char* filename, void* hdr_out, int force_version)
 {
 	TW3_Dctx* dctx = new TW3_Dctx;
-	setupEncryptV3(dctx, HonokaMiku::GetPrefixFromGameId(3), tw_key_tables, 1051, filename, hdr_out);
+	setupEncryptV3(dctx, GetPrefixFromGameType(HONOKAMIKU_GAMETYPE_TW), 1051, filename, hdr_out, force_version);
 	return dctx;
 }
