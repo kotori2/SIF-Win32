@@ -15,7 +15,11 @@
 */
 #include "CWin32Widget.h"
 #include "CWin32Platform.h"
+#include "CPFInterface.h"
 #include <ADSIid.h>
+#include <ExDisp.h>
+#include <comdef.h>
+#include <ctime>
 
 CWin32Widget *  CWin32Widget::m_pBegin   = NULL;
 CWin32Widget *  CWin32Widget::m_pEnd     = NULL;
@@ -124,11 +128,9 @@ bool
 CWin32Widget::setText(const char * string)
 {
 	// 渡された文字列はutf8なので、OSのコントロールに渡す前に ShiftJISに変換する
-	wchar_t temp[1024];
-	//const char * sjisStr = m_pPlatform->utf8toSJIS(string);
-	mbstowcs(temp, string, 1024);
-	int result = SetWindowTextW(m_hWnd, (LPWSTR)temp);
-	//delete [] sjisStr;
+	const char * sjisStr = m_pPlatform->utf8toSJIS(string);
+	int result = SetWindowText(m_hWnd, (LPSTR)sjisStr);
+	delete [] sjisStr;
 	return (!result) ? false : true;
 }
 
@@ -185,8 +187,9 @@ CWin32Widget::redraw()
 	if(m_bMove) {
 		m_bMove = false;
 		MoveWindow(m_hWnd, m_x, m_y, m_width, m_height, true);
+	} else {
+		InvalidateRect(m_hWnd, NULL, FALSE);
 	}
-	InvalidateRect(m_hWnd, NULL, FALSE);
 	RedrawWindow(m_hWnd, NULL, 0, RDW_UPDATENOW);
 }
 
@@ -194,7 +197,6 @@ void
 CWin32Widget::ReDrawControls()
 {
 	CWin32Widget * pCtrl = m_pBegin;
-
 	while(pCtrl) {
 		pCtrl->redraw();
 		pCtrl = pCtrl->m_next;
@@ -245,10 +247,7 @@ bool
 CWin32TextWidget::create(IWidget::CONTROL type, int id, const char * caption,
 							int x, int y, int width, int height)
 {
-	wchar_t caption_wide[128];
 	HWND hWnd = 0;
-
-	mbstowcs(caption_wide, caption, 128);
 
 	switch(type)
 	{
@@ -257,9 +256,9 @@ CWin32TextWidget::create(IWidget::CONTROL type, int id, const char * caption,
 		return false;
 	case TEXTBOX:
 		{
-			hWnd = CreateWindowExW(WS_EX_TOPMOST, 
-								L"EDIT",
-								caption_wide,
+			hWnd = CreateWindow(
+								TEXT("EDIT"),
+								caption,
 								WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL | ES_LEFT,
 								x, y, width, height,
 								getPlatform().get_hWnd(),
@@ -270,9 +269,9 @@ CWin32TextWidget::create(IWidget::CONTROL type, int id, const char * caption,
 		break;
 	case PASSWDBOX:
 		{
-			hWnd = CreateWindowExW(WS_EX_TOPMOST, L"EDIT",
-								caption_wide,
-								WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL | ES_LEFT | ES_PASSWORD,
+			hWnd = CreateWindow(TEXT("EDIT"),
+								caption,
+								WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL | ES_LEFT|ES_PASSWORD,
 								x, y, width, height,
 								getPlatform().get_hWnd(),
 								(HMENU)(INT_PTR)m_uniqId,
@@ -281,7 +280,7 @@ CWin32TextWidget::create(IWidget::CONTROL type, int id, const char * caption,
 		}
 		break;
 	}
-    if(m_maxlen > 0) { SendMessageW(hWnd, EM_SETLIMITTEXT, (WPARAM)m_maxlen, 0); }
+    if(m_maxlen > 0) { SendMessage(hWnd, EM_SETLIMITTEXT, (WPARAM)m_maxlen, 0); }
 
 	return init(hWnd, id, x, y, width, height);
 }
@@ -394,39 +393,20 @@ CWin32TextWidget::msgCommand(HWND /*hWnd*/, UINT /*message*/, WPARAM wParam, LPA
 CWin32WebWidget::CWin32WebWidget(CWin32Platform * pParent) : CWin32Widget(pParent) {}
 CWin32WebWidget::~CWin32WebWidget() {}
 
-#include "SIF_Win32.h"
-#include "CKLBDrawTask.h"
-
-void add_property(IWebBrowser2* wb, const char* key, const char* val)
-{
-	wchar_t key_multi[64];
-	size_t temp_len;
-	char* temp_val;
-	BSTR temp_key;
-	VARIANT temp_variant;
-
-	mbstowcs(key_multi, key, 64);
-	VariantInit(&temp_variant);
-	temp_len = strlen(val);
-	temp_val = new char[temp_len + 1];
-	temp_key = SysAllocString(key_multi);
-	temp_variant.vt = VT_BLOB;
-	temp_variant.pbVal = (BYTE*)temp_val;
-	wb->PutProperty(temp_key, temp_variant);
-}
-
 bool
 CWin32WebWidget::create(IWidget::CONTROL type, int id, const char * caption,
 							int x, int y, int width, int height,
 							const char * token, const char * region, const char * client,
 							const char * consumerKey, const char * applicationId, const char * userID)
 {
-	CKLBDrawResource& draw = CKLBDrawResource::getInstance();
-	HWND hWnd = 0;
-	int px;
-	int py;
 
-	draw.toPhisicalPosition(40, 96, px, py);
+	HWND hWnd = 0;
+	void (*AtlAxWinInit)();
+	HRESULT (__stdcall *AtlAxGetControl)(HWND,IUnknown **);
+	HMODULE hAtl = LoadLibrary("atl");
+	AtlAxWinInit = (void (*)())GetProcAddress(hAtl ,"AtlAxWinInit");
+	AtlAxGetControl = (HRESULT (__stdcall *)(HWND, IUnknown **))GetProcAddress(hAtl, "AtlAxGetControl");
+	AtlAxWinInit();
 
 	switch(type)
 	{
@@ -436,35 +416,69 @@ CWin32WebWidget::create(IWidget::CONTROL type, int id, const char * caption,
 	case WEBVIEW:
 	case WEBNOJUMP:
 		{
-			//TODO
-			/*
-			CoCreateInstance(CLSID_InternetExplorer, NULL, CLSCTX_LOCAL_SERVER, IID_IWebBrowser2, (void**)m_webView);
+			hWnd = 0;
 			
-			if(m_webView)
-			{
-				hWnd = CreateWindowExA(
-					WS_EX_TOPMOST,
-					"STATIC",
-					caption,
-					WS_CHILD | WS_VISIBLE,
-					x, y, width, height,
-					getPlatform().get_hWnd(),
-					(HMENU)(INT_PTR)m_uniqId,
-					GetModuleHandle(NULL),
-					NULL);
+			hWnd = CreateWindow("AtlAxWin", "Shell.Explorer.2",
+								WS_CHILD|WS_VISIBLE, x, y, width, height, 
+								getPlatform().get_hWnd(),
+								(HMENU)0, (HINSTANCE)GetModuleHandle(NULL), NULL);
+			IUnknown * hUnknown;
+			if(AtlAxGetControl(hWnd, &hUnknown) == S_OK) {
+				IWebBrowser2* browser;
+				hUnknown->QueryInterface(IID_IWebBrowser2,(void **)&browser);
+				VARIANT url, header, nil;
+				VariantInit(&url);
+				VariantInit(&header);
+				VariantInit(&nil);
+				url.vt = VT_BSTR;
+				header.vt = VT_BSTR;
+				nil.vt = VT_BSTR;
+				nil.bstrVal = NULL;
+				url.bstrVal = _bstr_t(caption);
+				char *authorize = KLBNEWA(char, 1000), *user_id = KLBNEWA(char, 500);
+				if (token) {
+					sprintf(authorize, "Authorize: consumerKey=%s&timeStamp=%d&version=1.1&token=%s&nonce=WV0\r\n"
+						,consumerKey, (int)time(NULL), token);
+				} else {
+					sprintf(authorize, "Authorize: consumerKey=%s&timeStamp=%d&version=1.1&nonce=WV0\r\n"
+						,consumerKey, (int)time(NULL));
+				}
+				if (userID) {
+					sprintf(user_id, "User-ID: %s\r\n", userID);
+				} else {
+					user_id[0] = '\0';
+				}
+				const char* platform_info_const = CPFInterface::getInstance().platform().getPlatform();
+				char* platform_info = KLBNEWA(char, 1024);
+				sprintf(platform_info, "%s", platform_info_const);
+				char* os_version = strchr(platform_info, ';');
+				*os_version = 0;
+				os_version++;
+				*(strchr(os_version, ';')) = 0;
+				int type = 2; //安卓
+				if (strcmp(platform_info, "Win32") == 0) {
+					sprintf(platform_info, "iOS");
+					sprintf(os_version, "iPad4_4 iPad 7.0");
+					type = 1;
+				}
+				else if (strcmp(platform_info, "iOS") == 0) {
+					type = 1;
+				}
 
-				// set headers
-				add_property(m_webView, "application_id", applicationId);
-				add_property(m_webView, "client_version", client);
-				add_property(m_webView, "consumerkey", consumerKey);
-				add_property(m_webView, "region", region);
-				add_property(m_webView, "token", token);
-				add_property(m_webView, "url", caption);
-				add_property(m_webView, "user_id", userID);
-
-
+				char *cHeader = KLBNEWA(char, 2000);
+				sprintf(cHeader, "API-Model: straightforward\r\nBundle-Version: %s\r\nClient-Version: %s\r\nOS-Version: %s\r\nOS: %s\r\nPlatform-Type: %d\r\nApplication-ID: %s\r\nTime-Zone: JST\r\nRegion: %s\r\n%s%s"
+					, CPFInterface::getInstance().platform().getBundleVersion(), client, os_version, platform_info, type, applicationId, region, authorize, user_id);
+				KLBDELETEA(authorize);
+				KLBDELETEA(user_id);
+				KLBDELETEA(platform_info);
+				header.bstrVal = _bstr_t(cHeader);
+				browser->Navigate2(&url, &nil, &nil, &nil, &header);
+				KLBDELETEA(cHeader);
+				VariantClear(&url);
+				VariantClear(&header);
+				VariantClear(&nil);
 			}
-			*/
+			
 		}
 		break;
 	}
@@ -472,11 +486,13 @@ CWin32WebWidget::create(IWidget::CONTROL type, int id, const char * caption,
 }
 
 
+
+
 CWin32MovieWidget::CWin32MovieWidget(CWin32Platform * pParent) : CWin32Widget(pParent) {}
 CWin32MovieWidget::~CWin32MovieWidget() {}
 
 bool
-CWin32MovieWidget::create(IWidget::CONTROL type, int id, const char * caption,
+CWin32MovieWidget::create(IWidget::CONTROL type, int id, const char * /*caption*/,
 							int x, int y, int width, int height)
 {
 	HWND hWnd = 0;
@@ -489,6 +505,16 @@ CWin32MovieWidget::create(IWidget::CONTROL type, int id, const char * caption,
 	case MOVIEPLAYER:
 		{
 			hWnd = 0;
+					/*CreateWindow(TEXT("MovieArea"),
+								caption,
+								WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL | ES_LEFT,
+								x, y, width, height,
+								getPlatform().get_hWnd(),
+								(HMENU)(INT_PTR)id,
+								(HINSTANCE)GetModuleHandle(NULL),
+								0);
+								*/
+
 		}
 		break;
 	case BGMOVIEPLAYER:
@@ -506,7 +532,7 @@ CWin32ActivityIndicator::CWin32ActivityIndicator(CWin32Platform * pParent) : CWi
 CWin32ActivityIndicator::~CWin32ActivityIndicator() {}
 
 bool
-CWin32ActivityIndicator::create(IWidget::CONTROL type, int id, const char * caption,
+CWin32ActivityIndicator::create(IWidget::CONTROL type, int id, const char * /*caption*/,
 								int x, int y, int width, int height)
 {
 	HWND hWnd = 0;
@@ -519,6 +545,16 @@ CWin32ActivityIndicator::create(IWidget::CONTROL type, int id, const char * capt
 	case ACTIVITYINDICATOR:
 		{
 			hWnd = 0;
+					/*CreateWindow(TEXT("MovieArea"),
+								caption,
+								WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL | ES_LEFT,
+								x, y, width, height,
+								getPlatform().get_hWnd(),
+								(HMENU)(INT_PTR)id,
+								(HINSTANCE)GetModuleHandle(NULL),
+								0);
+								*/
+
 		}
 		break;
 	}

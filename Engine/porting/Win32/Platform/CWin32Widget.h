@@ -115,8 +115,6 @@ private:
 	unsigned int		m_cols[4];
 };
 
-#include <ExDisp.h>
-
 class CWin32WebWidget : public CWin32Widget
 {
 	friend class CWin32Platform;
@@ -130,7 +128,6 @@ public:
 				const char * consumerKey, const char * applicationId, const char * userID);
 
 private:
-	IWebBrowser2* m_webView;
 	// void redraw();
 };
 

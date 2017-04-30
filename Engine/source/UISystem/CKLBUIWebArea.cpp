@@ -173,7 +173,7 @@ CKLBUIWebArea::initCore(bool mode, float x, float y,
     const char * appID  = keychain.getAppID();
 	const char * userID = keychain.getUserID();
     
-	m_pWebView = KLBNEWC( CKLBUIWebView,(mode, int(width), int(height), str, token, region, client, consumerKey, appID, userID));
+	m_pWebView = KLBNEWC( CKLBUIWebView,(mode, str, token, region, client, consumerKey, appID, userID));
 	getNode()->addNode(m_pWebView);
 
 	setText(str);

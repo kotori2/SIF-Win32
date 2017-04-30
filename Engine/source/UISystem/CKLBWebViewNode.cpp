@@ -20,7 +20,7 @@
 
 #include "CKLBDrawTask.h"
 
-CKLBUIWebView::CKLBUIWebView(bool isPageJump, int w, int h, const char * initialURL,
+CKLBUIWebView::CKLBUIWebView(bool isPageJump, const char * initialURL,
                             const char * token, const char * region, const char * client,
                             const char * consumerKey, const char * applicationId, const char * userID)
 : nativeInputItem   (NULL)
@@ -38,7 +38,7 @@ CKLBUIWebView::CKLBUIWebView(bool isPageJump, int w, int h, const char * initial
 	CKLBDrawResource& draw = CKLBDrawResource::getInstance();
 	int px,py;
 	draw.toPhisicalPosition(m_tx, m_ty, px, py);
-	nativeInputItem = pForm.createControl(control , 0, url, px, py, w, h, token, region, client, consumerKey, applicationId, userID);
+	nativeInputItem = pForm.createControl(control , 0, url, px, py, 0, 0, token, region, client, consumerKey, applicationId, userID);
 
 	if (nativeInputItem) {
 		nativeInputItem->visible(false);
