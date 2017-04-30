@@ -66,8 +66,8 @@ bool OVERRIDE_IS_SINGECORE = false;
 char* XMC_Force = NULL;
 char* server_url_force = NULL;
 
-bool frame_limit = true;
-double frame_limit_time_ms = 16.67;
+bool frame_limit = false;
+double frame_limit_time_ms = 0.01;
 
 HICON create_icon_32x32();
 HICON create_icon_16x16();
