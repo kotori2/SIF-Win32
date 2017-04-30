@@ -276,6 +276,11 @@ private:
 
 	static const s8	ALWAYS_ACTIVE	= 1<<6;
 	s8				m_activeStatus;
+
+	//游戏内DL结束后，通知刷新Asset
+	virtual void notifyAssetUpdate(const char* asset) {
+		; //do nothing
+	}
 };
 
 //! タスクマネージャクラス
@@ -339,6 +344,9 @@ public:
 	inline void setRegistedTaskList(CKLBRegistedTaskList * pRegList = 0) {
 		m_pRegList = pRegList;
 	}
+
+	// 当游戏内下载完成后，通知刷新asset
+	void notifyAssetRefresh(const char* asset);
 
 
     //! 1フレーム分の処理実行

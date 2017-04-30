@@ -107,18 +107,23 @@ int
 CKLBLuaLibTASK::isKill(lua_State * L)
 {
 	CLuaState lua(L);
-	if(lua.numArgs() != 1) return 0;
+	if (lua.numArgs() != 1) return 0;
 	bool isRemove = true;
-	if(!lua.isNil(1)) {
+	if (!lua.isNil(1)) {
 		CKLBLuaTask * pTask = (CKLBLuaTask *)lua.getPointer(1);
-		if(!pTask) return 0;
-		CHECKTASK(pTask);
+		if (!pTask) return 0;
+		//CHECKTASK(pTask); ERROR the cancelled task was specified
+		if (!CKLBTaskMgr::getInstance().isExistTask(pTask)) {
+			lua.retBool(true);
+			return 1;
+		}
 		CKLBTaskMgr& mgr = CKLBTaskMgr::getInstance();
 		isRemove = mgr.is_remove(pTask);
 	}
 	lua.retBool(isRemove);
 	return 1;
 }
+
 
 int
 CKLBLuaLibTASK::registerKill(lua_State * L)

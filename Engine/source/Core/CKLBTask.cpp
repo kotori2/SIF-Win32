@@ -24,7 +24,6 @@
 #include "CPFInterface.h"
 ;
 
-static void* task_mutex = NULL;
 
 CKLBRegistedTaskList::CKLBRegistedTaskList()
 : m_begin   (NULL)
@@ -212,8 +211,6 @@ CKLBTaskMgr::CKLBTaskMgr()
     }
     m_lstRemove.begin = m_lstRemove.end = NULL;
     m_lstStage.begin  = m_lstStage.end  = NULL;
-
-	task_mutex = CPFInterface::getInstance().platform().allocMutex();
 }
 
 CKLBTaskMgr::~CKLBTaskMgr() 
@@ -462,8 +459,6 @@ CKLBTaskMgr::dump() {
 bool
 CKLBTaskMgr::execute(u32 deltaT)
 {
-	IPlatformRequest& pf = CPFInterface::getInstance().platform();
-	//pf.mutexLock(task_mutex);
     // すべてのタスクを呼び出す前に、削除リストを初期化する。
     m_lstRemove.begin = m_lstRemove.end = NULL;
     
@@ -495,11 +490,10 @@ CKLBTaskMgr::execute(u32 deltaT)
 #else
         scriptTime = 0;
 #endif
-		int task_processed_count = 0;
 
-        for(pTask = m_lstTask[i].begin; pTask && task_processed_count < 4096; pTask = pTask->m_pExeNext) {
+        for(pTask = m_lstTask[i].begin; pTask; pTask = pTask->m_pExeNext) {
             m_currentTask = pTask;
-			task_processed_count++;
+			// taskCount++;
 
             // 開始時刻の取得
 #ifdef DEBUG_PERFORMANCE
@@ -552,7 +546,7 @@ CKLBTaskMgr::execute(u32 deltaT)
 #endif
 
 	m_currentTask = NULL;
-	//pf.mutexUnlock(task_mutex);
+    
     return m_bExit;
 }
 
@@ -566,5 +560,17 @@ CKLBTask::interposeTimer(CKLBTask* pTimer) {
 		pTimer->m_lstChild.end		= this;	
 	
 		m_pParent	= pTimer;
+	}
+}
+
+// 当游戏内下载完成后，通知刷新asset
+void CKLBTaskMgr::notifyAssetRefresh(const char* asset) {
+	for (int i = 0; i < CKLBTask::P_MAX; i++) {
+		TASK_LIST list = m_lstTask[i];
+		for (CKLBTask* task = list.begin; task != NULL; task = task->m_pExeNext) {
+			if (task->getTaskType() == CKLBTask::TASK_LUA_UI) {
+				task->notifyAssetUpdate(asset);
+			}
+		}
 	}
 }
