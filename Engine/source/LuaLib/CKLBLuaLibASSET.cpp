@@ -48,6 +48,9 @@ CKLBLuaLibASSET::addLibrary()
 	addFunction("ASSET_getAssetPathIfNotExist",get_asset_path_if_not_found);
 	addFunction("ASSET_startDownload",		asset_start_download);
 	addFunction("ASSET_killDownload",		asset_kill_download);
+	addFunction("Asset_getNMAssetSize",     CKLBLuaLibASSET::luaGetNMAssetSize);
+	addFunction("Asset_getNMAsset",     CKLBLuaLibASSET::luaGetNMAsset);
+	addFunction("Asset_setNMAsset",         CKLBLuaLibASSET::luaSetNMAsset);
 }
 
 s32
@@ -344,5 +347,26 @@ int asset_kill_download(lua_State* L)
 	lua.print_stack();
 	MicroDownload::DeleteAll();
 
+	return 0;
+}
+
+s32
+CKLBLuaLibASSET::luaGetNMAssetSize(lua_State* L)
+{
+	DEBUG_PRINT("ASSET_GetNMAssetSize");
+	return 0;
+}
+
+s32
+CKLBLuaLibASSET::luaGetNMAsset(lua_State* L)
+{
+	DEBUG_PRINT("ASSET_GetNMAsset");
+	return 0;
+}
+
+s32
+CKLBLuaLibASSET::luaSetNMAsset(lua_State* L)
+{
+	DEBUG_PRINT("ASSET_SetNMAsset");
 	return 0;
 }
