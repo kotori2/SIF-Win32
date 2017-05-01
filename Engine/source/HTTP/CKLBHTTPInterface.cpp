@@ -53,6 +53,7 @@ s32 CKLBHTTPInterface::HTTPConnectionThread(void * /*hThread*/, void * data)
 #define XMESSAGECODE_LEN 11
 
 char xms_key[XMESSAGECODE_LEN];
+extern char sessionKey[64];
 bool xms_aleady_processed = false;
 extern char* XMC_Force;
 
@@ -158,20 +159,20 @@ void CKLBHTTPInterface::download() {
 						if(XMC_Force == NULL)
 						{
 							process_xms();
-							hash = HMAC(EVP_sha1(), xms_key, XMESSAGECODE_LEN, reinterpret_cast<const u8*>(ptr + 1), content_len, NULL, NULL);
+							hash = HMAC(EVP_sha1(), sessionKey, strlen(sessionKey), reinterpret_cast<const u8*>(ptr + 1), content_len, NULL, NULL);
 						}
 						else
 						{
-							static size_t xmc_force_len = strlen(XMC_Force);
-							hash = HMAC(EVP_sha1(), XMC_Force, xmc_force_len, reinterpret_cast<const u8*>(ptr + 1), content_len, NULL, NULL);
+							//static size_t xmc_force_len = strlen(XMC_Force);
+							static size_t xmc_len = strlen(sessionKey);
+							hash = HMAC(EVP_sha1(), sessionKey, xmc_len, reinterpret_cast<const u8*>(ptr + 1), content_len, NULL, NULL);
 						}
-
 						for(int i = 0; i < 20; i++)
 						{
 							temp[i * 2 + 1] = 32;
 							sprintf(temp + i * 2, "%02x", hash[i]);
 						}
-
+						DEBUG_PRINT("Calculated X-Message-Code: %s", temp);
 						sprintf(xmc, "X-Message-Code: %s", temp);
 
 						curl_slist_append(headerlist, xmc);

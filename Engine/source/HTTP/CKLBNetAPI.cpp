@@ -22,10 +22,19 @@
 #include "SIF_Win32.h"
 #include <time.h>
 #include <ctype.h>
+#include <openssl/rsa.h>
+#include <openssl/evp.h>
+#include <openssl/pem.h>
+#include <openssl/aes.h>
+#include <openssl/applink.c>
+#pragma comment(lib, "libeay32.lib")
 
 ;
 
 static int fail_times = 0;
+char sessionKey[64];
+bool authkey;
+char iv[32] = "3153224930785570";
 
 enum {
 	// Command Values
@@ -39,6 +48,29 @@ enum {
 	NETAPI_DEBUG_HDR,			// unknwon
 	NETAPI_GEN_CMDNUMID,		// create commandNum string in data. possibility unused
 };
+
+RSA * createRSAWithFilename(char * filename, int public_key)
+{
+	FILE * fp = fopen(filename, "rb");
+
+	if (fp == NULL)
+	{
+		printf("Unable to open file %s \n", filename);
+		return NULL;
+	}
+	RSA *rsa = RSA_new();
+
+	if (public_key)
+	{
+		rsa = PEM_read_RSA_PUBKEY(fp, &rsa, NULL, NULL);
+	}
+	else
+	{
+		rsa = PEM_read_RSAPrivateKey(fp, &rsa, NULL, NULL);
+	}
+
+	return rsa;
+}
 
 static IFactory::DEFCMD cmd[] = {
 	{"NETAPI_STARTUP",					NETAPI_STARTUP					},
@@ -119,6 +151,157 @@ char* create_authorize_string(const char* consumerKey, int nonce, const char* to
 	return out;
 }
 
+const char base[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+/* Base64 编码 */
+char *base64_encode(const char* data)
+{
+	int data_len = strlen(data);   
+	int prepare = 0;
+	int ret_len;
+	int temp = 0;
+	char *ret = NULL;
+	char *f = NULL;
+	int tmp = 0;
+	char changed[4];
+	int i = 0;
+	ret_len = data_len / 3;
+	temp = data_len % 3;
+	if (temp > 0)
+	{
+		ret_len += 1;
+	}
+	ret_len = ret_len * 4 + 1;
+	ret = (char *)malloc(ret_len);
+
+	if (ret == NULL)
+	{
+		printf("No enough memory.\n");
+		exit(0);
+	}
+	memset(ret, 0, ret_len);
+	f = ret;
+	while (tmp < data_len)
+	{
+		temp = 0;
+		prepare = 0;
+		memset(changed, '\0', 4);
+		while (temp < 3)
+		{
+			//printf("tmp = %d\n", tmp);   
+			if (tmp >= data_len)
+			{
+				break;
+			}
+			prepare = ((prepare << 8) | (data[tmp] & 0xFF));
+			tmp++;
+			temp++;
+		}
+		prepare = (prepare << ((3 - temp) * 8));
+		//printf("before for : temp = %d, prepare = %d\n", temp, prepare);   
+		for (i = 0; i < 4; i++)
+		{
+			if (temp < i)
+			{
+				changed[i] = 0x40;
+			}
+			else
+			{
+				changed[i] = (prepare >> ((3 - i) * 6)) & 0x3F;
+			}
+			*f = base[changed[i]];
+			//printf("%.2X", changed[i]);   
+			f++;
+		}
+	}
+	*f = '\0';
+
+	return ret;
+
+}
+
+/* 转换算子 */
+static char find_pos(char ch)
+{
+	char *ptr = (char*)strrchr(base, ch);//the last position (the only) in base[]   
+	return (ptr - base);
+}
+
+/* Base64 解码 */
+char *base64_decode(const char *data)
+{
+	int data_len = strlen(data);
+	int ret_len = (data_len / 4) * 3;
+	int equal_count = 0;
+	char *ret = NULL;
+	char *f = NULL;
+	int tmp = 0;
+	int temp = 0;
+	int prepare = 0;
+	int i = 0;
+	if (*(data + data_len - 1) == '=')
+	{
+		equal_count += 1;
+	}
+	if (*(data + data_len - 2) == '=')
+	{
+		equal_count += 1;
+	}
+	if (*(data + data_len - 3) == '=')
+	{//seems impossible   
+		equal_count += 1;
+	}
+	switch (equal_count)
+	{
+	case 0:
+		ret_len += 4;//3 + 1 [1 for NULL]   
+		break;
+	case 1:
+		ret_len += 4;//Ceil((6*3)/8)+1   
+		break;
+	case 2:
+		ret_len += 3;//Ceil((6*2)/8)+1   
+		break;
+	case 3:
+		ret_len += 2;//Ceil((6*1)/8)+1   
+		break;
+	}
+	ret = (char *)malloc(ret_len);
+	if (ret == NULL)
+	{
+		printf("No enough memory.\n");
+		exit(0);
+	}
+	memset(ret, 0, ret_len);
+	f = ret;
+	while (tmp < (data_len - equal_count))
+	{
+		temp = 0;
+		prepare = 0;
+		while (temp < 4)
+		{
+			if (tmp >= (data_len - equal_count))
+			{
+				break;
+			}
+			prepare = (prepare << 6) | (find_pos(data[tmp]));
+			temp++;
+			tmp++;
+		}
+		prepare = prepare << ((4 - temp) * 6);
+		for (i = 0; i<3; i++)
+		{
+			if (i == temp)
+			{
+				break;
+			}
+			*f = (char)((prepare >> ((2 - i) * 8)) & 0xFF);
+			f++;
+		}
+	}
+	*f = '\0';
+	return ret;
+}
+
 int get_statuscode(CKLBJsonItem* response)
 {
 	int status_code = 0;
@@ -176,12 +359,28 @@ void CKLBNetAPI::startUp(int phase, int status_code)
 		case 0:
 		{
 			// Do additional request. login/startUp
-			char request_data[256];
+			char request_data[1024];
 			const char* form[2];
 			char* authorize = create_authorize_string(kc.getConsumerKey(), m_nonce, kc.setToken(m_pRoot->child()->child()->getString()));
 	
 			// Create request_data
-			sprintf(request_data, "request_data={\"login_key\":\"%s\",\"login_passwd\":\"%s\"}", kc.getLoginKey(), kc.getLoginPw());
+			char AESKey[32] = "";
+			extern char iv[32];
+			AES_KEY aes;
+			strncpy(AESKey, sessionKey, 16);
+			DEBUG_PRINT(base64_encode(AESKey));
+			AES_set_encrypt_key((unsigned char*)AESKey, 128, &aes);
+			int len = strlen(kc.getLoginKey());
+			char login_key[512] = "";
+			char login_passwd[512] = "";
+			AES_cbc_encrypt((unsigned char*)kc.getLoginKey(), (unsigned char*)login_key, len, &aes, (unsigned char *)iv, AES_ENCRYPT);
+			DEBUG_PRINT(base64_encode(login_key));
+			sprintf(login_key, "%s%s", iv, login_key);
+			len = strlen(kc.getLoginPw());
+			AES_cbc_encrypt((unsigned char*)kc.getLoginPw(), (unsigned char*)login_passwd, len, &aes, (unsigned char *)iv, AES_ENCRYPT);
+			DEBUG_PRINT(base64_encode(login_passwd));
+			sprintf(login_passwd, "%s%s", iv, login_passwd);
+			sprintf(request_data, "request_data={\"login_key\": \"%s\",\"login_passwd\": \"%s\",\"devtoken\":\"APA91bGJEKHGnfimcCaqSdq09geZ3fsWm-asqIBjOjrPGLAsdQXm_sl2xtBv55SNuvaPHCIzobN4oUI8wSNTcT5JVovXDhuEJa5tXH7iejQUXJaqxzGcM47yUjswewBbTGR9ZWYSvmYo\"}", base64_encode(login_key), base64_encode(login_passwd));
 			form[0] = request_data;
 			form[1] = NULL;
 
@@ -257,73 +456,89 @@ void CKLBNetAPI::startUp(int phase, int status_code)
 void CKLBNetAPI::login(int phase, int status_code)
 {
 	CKLBNetAPIKeyChain& kc = CKLBNetAPIKeyChain::getInstance();
-	switch(phase)
+	switch (phase)
 	{
-		case 0:
+	case 0:
+	{
+		char request_data[512];
+		char country_code[4];
+		const char* form[2];
+		char* authorize = create_authorize_string(kc.getConsumerKey(), m_nonce, kc.setToken(m_pRoot->child()->child()->getString()));
+
+		// Request data
+		GetLocaleInfoA(LOCALE_USER_DEFAULT, LOCALE_SISO3166CTRYNAME, country_code, 4);
+		char AESKey[32] = "";
+		extern char iv[32];
+		AES_KEY aes;
+		strncpy(AESKey, sessionKey, 16);
+		DEBUG_PRINT(base64_encode(AESKey));
+		AES_set_encrypt_key((unsigned char*)AESKey, 128, &aes);
+		int len = strlen(kc.getLoginKey());
+		char login_key[512] = "";
+		char login_passwd[512] = "";
+		AES_cbc_encrypt((unsigned char*)kc.getLoginKey(), (unsigned char*)login_key, len, &aes, (unsigned char *)iv, AES_ENCRYPT);
+		DEBUG_PRINT(base64_encode(login_key));
+		sprintf(login_key, "%s%s", iv, login_key);
+		len = strlen(kc.getLoginPw());
+		AES_cbc_encrypt((unsigned char*)kc.getLoginPw(), (unsigned char*)login_passwd, len, &aes, (unsigned char *)iv, AES_ENCRYPT);
+		DEBUG_PRINT(base64_encode(login_passwd));
+		sprintf(login_passwd, "%s%s", iv, login_passwd);
+		sprintf(request_data, "request_data={\"login_key\": \"%s\",\"login_passwd\": \"%s\",\"devtoken\":\"APA91bGJEKHGnfimcCaqSdq09geZ3fsWm-asqIBjOjrPGLAsdQXm_sl2xtBv55SNuvaPHCIzobN4oUI8wSNTcT5JVovXDhuEJa5tXH7iejQUXJaqxzGcM47yUjswewBbTGR9ZWYSvmYo\"}", base64_encode(login_key), base64_encode(login_passwd)); 
+		form[0] = request_data;
+		form[1] = NULL;
+
+		// create new HTTP
+		NetworkManager::releaseConnection(m_http);
+		m_http = NetworkManager::createConnection();
+		m_http->reuse();
+		m_http->setForm(form);
+		set_header(m_http, authorize);
+
+		// send
+		char url[MAX_PATH];
+		sprintf(url, "%s/login/login", kc.getURL());
+		m_http->httpPOST(url, false);
+
+		// Set values
+		m_netapi_phase++;
+		m_timestart = 0;			// Reset
+
+		KLBDELETEA(authorize);
+		return;
+	}
+	case 1:
+	{
+		// Login OK
+		char user_id[16];
+
+		// Find status code
+
+		if ((status_code = get_statuscode(m_pRoot->child())) == 200)
 		{
-			char request_data[512];
-			char country_code[4];
-			const char* form[2];
-			char* authorize = create_authorize_string(kc.getConsumerKey(), m_nonce, kc.setToken(m_pRoot->child()->child()->getString()));
-		
-			// Request data
-			GetLocaleInfoA(LOCALE_USER_DEFAULT, LOCALE_SISO3166CTRYNAME, country_code, 4);
-			sprintf(request_data, "request_data={\"login_key\": \"%s\",\"login_passwd\": \"%s\",\"devtoken\":\"APA91bGJEKHGnfimcCaqSdq09geZ3fsWm-asqIBjOjrPGLAsdQXm_sl2xtBv55SNuvaPHCIzobN4oUI8wSNTcT5JVovXDhuEJa5tXH7iejQUXJaqxzGcM47yUjswewBbTGR9ZWYSvmYo\"}",  kc.getLoginKey(), kc.getLoginPw());
-			form[0] = request_data;
-			form[1] = NULL;
+			kc.setToken(m_pRoot->child()->child()->getString());	// Authorize token
 
-			// create new HTTP
-			NetworkManager::releaseConnection(m_http);
-			m_http = NetworkManager::createConnection();
-			m_http->reuse();
-			m_http->setForm(form);
-			set_header(m_http, authorize);
+			sprintf(user_id, "%d", m_pRoot->child()->child()->next()->getInt());
+			kc.setUserID(user_id);	// User ID
 
-			// send
-			char url[MAX_PATH];
-			sprintf(url, "%s/login/login", kc.getURL());
-			m_http->httpPOST(url, false);
+			NetworkManager::releaseConnection(m_http);	// Release it first before calling lua callback.
+			m_http = NULL;
+			m_request_type = (-1);
+			m_netapi_phase = 0;
 
-			// Set values
-			m_netapi_phase++;
-			m_timestart = 0;			// Reset
-
-			KLBDELETEA(authorize);
-			return;
+			lua_callback(NETAPIMSG_LOGIN_SUCCESS, status_code, m_pRoot, 1);
 		}
-		case 1:
+		else
 		{
-			// Login OK
-			char user_id[16];
+			NetworkManager::releaseConnection(m_http);	// Release it first before calling lua callback.
+			m_http = NULL;
+			m_request_type = (-1);
+			m_netapi_phase = 0;
 
-			// Find status code
-
-			if((status_code = get_statuscode(m_pRoot->child())) == 200)
-			{
-				kc.setToken(m_pRoot->child()->child()->getString());	// Authorize token
-		
-				sprintf(user_id, "%d", m_pRoot->child()->child()->next()->getInt());
-				kc.setUserID(user_id);	// User ID
-		
-				NetworkManager::releaseConnection(m_http);	// Release it first before calling lua callback.
-				m_http = NULL;
-				m_request_type = (-1);
-				m_netapi_phase = 0;
-
-				lua_callback(NETAPIMSG_LOGIN_SUCCESS, status_code, m_pRoot, 1);
-			}
-			else
-			{
-				NetworkManager::releaseConnection(m_http);	// Release it first before calling lua callback.
-				m_http = NULL;
-				m_request_type = (-1);
-				m_netapi_phase = 0;
-
-				lua_callback(NETAPIMSG_LOGIN_FAILED, status_code, m_pRoot, 1);
-			}
-
-			return;
+			lua_callback(NETAPIMSG_LOGIN_FAILED, status_code, m_pRoot, 1);
 		}
+
+		return;
+	}
 	}
 }
 
@@ -348,6 +563,55 @@ void CKLBNetAPI::request_authkey(int timeout)
 	m_http = http;
 	m_timeout = timeout;
 	m_timestart = 0;
+	char request_data[1024];
+	const char* form[2];
+	//Load public key
+	RSA * rsa = createRSAWithFilename("public.pem", 1);
+	char str[2];
+	char AESKey1[64] = "42243943565563339217974837635191";
+	char AESKey2[32] = "";
+	//Generate AES key and iv.
+	srand(time(0));
+	/*for (int i = 0; i < 32; i++) {
+		itoa(rand() % 10, str, 10);
+		strcat(AESKey1, str);
+	}*/
+	DEBUG_PRINT("Got AES key: %s", (const unsigned char *)AESKey1);
+
+	/*for (int i = 0; i < 16; i++) {
+		itoa(rand() % 10, str, 10);
+		strcat(iv, str);
+	}*/
+	DEBUG_PRINT("Got iv: %s", iv);
+
+	//Generate auth data
+	const char dev_data[] = "{\"Rating\":\"0\",\"Detail\" : \"This is a iOS device\"}";
+	char auth_data[1024] = "";
+	char auth_data_enc[1024] = "";
+	sprintf(auth_data, "{ \"1\":%s,\"2\": %s, \"3\": %s }", kc.getLoginKey(), kc.getLoginPw(), dev_data);
+
+	//Encrypt dummy token
+	unsigned char dummy_token[2048] = "";
+	RSA_public_encrypt(strlen(dev_data), (const unsigned char *)AESKey1, dummy_token, rsa, RSA_PKCS1_PADDING);
+
+	//Encrypt auth data
+	AES_KEY aes;
+	strncpy(AESKey2, AESKey1, 16);
+	AES_set_encrypt_key((unsigned char*)AESKey2, 128, &aes);
+	int len = strlen(auth_data);
+	AES_cbc_encrypt((unsigned char*)auth_data, (unsigned char*)auth_data_enc, len, &aes, (unsigned char *)iv, AES_ENCRYPT);
+	sprintf(auth_data_enc, "%s%s", iv, auth_data_enc);
+	sprintf(request_data,"request_data={\"dummy_token\":\"%s\",\"auth_data\":\"%s\"}", base64_encode((char*)dummy_token), base64_encode(auth_data_enc));
+	form[0] = request_data;
+	form[1] = NULL;
+	m_http->setForm(form);
+	char xorpad[64];
+	sprintf(xorpad, "%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c", '\x02', '\x08', '\x11', '\x05', '\x20', '\x0d', '\x16', '\x1d', '\x0d', '\x04', '\x0c', '\x0a', '\x5b', '\x05', '\x09', '\x05', '\x0f', '\x44', '\x0b', '\x10', '\x06', '\x51', '\x15', '\x01', '\x59', '\x62', '\x0a', '\x0e', '\x02', '\x58', '\x1c', '\x0e');
+	for (int i = 0; i < strlen(xorpad); i++) {
+		sessionKey[i] = xorpad[i] ^ AESKey1[i];
+	}
+	DEBUG_PRINT("New sessionKey: %s",base64_encode(sessionKey));
+	authkey = true;
 	http->httpPOST(url, false);
 }
 
@@ -417,10 +681,24 @@ CKLBNetAPI::execute(u32 deltaT)
 			fwrite(body, 1, bodyLen, stdout);
 			puts("\n*====Response Data====*");
 
+			if (authkey) {
+				char dummy_token[64] = "";
+				sprintf(dummy_token, "%s", m_pRoot->child()->child()->next()->getString());
+				DEBUG_PRINT("Got dummy_token from server: %s", dummy_token);
+				sprintf(dummy_token, "%s", base64_decode(dummy_token));
+				DEBUG_PRINT("Length of SessionKey: %d",strlen(sessionKey));
+				for (int i = 0; i < strlen(sessionKey); i++) {
+					sessionKey[i] = sessionKey[i] ^ dummy_token[i];
+				}
+				DEBUG_PRINT("Got new sessionKey: %s", base64_encode(sessionKey));
+				authkey = false;
+			}
+			
 			if(m_request_type == NETAPI_STARTUP)
 				return startUp(m_netapi_phase, state);
 			else if(m_request_type == NETAPI_LOGIN)
 				return login(m_netapi_phase, state);
+			
 
 			// Check if we're outdated
 			if(m_downloading == false)
@@ -627,7 +905,7 @@ void CKLBNetAPI::set_header(CKLBHTTPInterface* http, const char* authorize_strin
 		temp_time_zone = ++os_data;
 
 		sprintf(os_version, "OS-Version: %s", temp_os_version);
-		sprintf(time_zone, "Time-Zone: %s", temp_time_zone);
+		sprintf(time_zone, "Time-Zone: %s", "JST");
 	}
 
 	// Process authorize string
@@ -653,11 +931,11 @@ void CKLBNetAPI::set_header(CKLBHTTPInterface* http, const char* authorize_strin
 	headers[0] = "API-Model: straightforward";
 	headers[1] = application_id;
 	headers[2] = authorize;
-	headers[3] = "Bundle-Version: 4.2";
+	headers[3] = "Bundle-Version: 5.0.1";
 	headers[4] = client_version;
 	headers[5] = "Debug: 1";
 	headers[6] = "OS: Android";
-	headers[7] = "OS-Version: Nexus5 google hammerhead 4.4.4";
+	headers[7] = "OS-Version: Nexus 5 google hammerhead 4.4.4";
 	headers[8] = "Platform-Type: 2";
 	headers[9] = region;
 	headers[10] = time_zone;

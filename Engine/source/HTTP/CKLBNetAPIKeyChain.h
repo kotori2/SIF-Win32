@@ -125,7 +125,7 @@ public:
     inline const char * getConsumerKey	() const { return m_cKey;	}
     inline const char * getAppID		() const { return m_appID;	}
 	inline const char * getUserID		() const { return m_userID; }
-	inline const char * getURL			() const { return m_URL; }
+	inline const char * getURL			() const { return m_URL;      }
 	inline const char * getLoginKey		() const { return m_loginKey; }
 	inline const char * getLoginPw		() const { return m_loginPwd; }
 
