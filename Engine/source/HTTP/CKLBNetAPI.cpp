@@ -373,11 +373,17 @@ void CKLBNetAPI::startUp(int phase, int status_code)
 			int len = strlen(kc.getLoginKey());
 			char login_key[512] = "";
 			char login_passwd[512] = "";
-			AES_cbc_encrypt((unsigned char*)kc.getLoginKey(), (unsigned char*)login_key, len, &aes, (unsigned char *)iv, AES_ENCRYPT);
+			char iv_[32] = "";
+			for (int i = 0; i < strlen(iv); i++)
+				iv_[i] = iv[i];
+
+			AES_cbc_encrypt((unsigned char*)kc.getLoginKey(), (unsigned char*)login_key, len, &aes, (unsigned char *)iv_, AES_ENCRYPT);
 			DEBUG_PRINT(base64_encode(login_key));
 			sprintf(login_key, "%s%s", iv, login_key);
 			len = strlen(kc.getLoginPw());
-			AES_cbc_encrypt((unsigned char*)kc.getLoginPw(), (unsigned char*)login_passwd, len, &aes, (unsigned char *)iv, AES_ENCRYPT);
+			for (int i = 0; i < strlen(iv); i++)
+				iv_[i] = iv[i];
+			AES_cbc_encrypt((unsigned char*)kc.getLoginPw(), (unsigned char*)login_passwd, len, &aes, (unsigned char *)iv_, AES_ENCRYPT);
 			DEBUG_PRINT(base64_encode(login_passwd));
 			sprintf(login_passwd, "%s%s", iv, login_passwd);
 			sprintf(request_data, "request_data={\"login_key\": \"%s\",\"login_passwd\": \"%s\",\"devtoken\":\"APA91bGJEKHGnfimcCaqSdq09geZ3fsWm-asqIBjOjrPGLAsdQXm_sl2xtBv55SNuvaPHCIzobN4oUI8wSNTcT5JVovXDhuEJa5tXH7iejQUXJaqxzGcM47yUjswewBbTGR9ZWYSvmYo\"}", base64_encode(login_key), base64_encode(login_passwd));
@@ -476,11 +482,16 @@ void CKLBNetAPI::login(int phase, int status_code)
 		int len = strlen(kc.getLoginKey());
 		char login_key[512] = "";
 		char login_passwd[512] = "";
-		AES_cbc_encrypt((unsigned char*)kc.getLoginKey(), (unsigned char*)login_key, len, &aes, (unsigned char *)iv, AES_ENCRYPT);
+		char iv_[32] = "";
+		for (int i = 0; i < strlen(iv); i++)
+			iv_[i] = iv[i];
+		AES_cbc_encrypt((unsigned char*)kc.getLoginKey(), (unsigned char*)login_key, len, &aes, (unsigned char *)iv_, AES_ENCRYPT);
 		DEBUG_PRINT(base64_encode(login_key));
 		sprintf(login_key, "%s%s", iv, login_key);
 		len = strlen(kc.getLoginPw());
-		AES_cbc_encrypt((unsigned char*)kc.getLoginPw(), (unsigned char*)login_passwd, len, &aes, (unsigned char *)iv, AES_ENCRYPT);
+		for (int i = 0; i < strlen(iv); i++)
+			iv_[i] = iv[i];
+		AES_cbc_encrypt((unsigned char*)kc.getLoginPw(), (unsigned char*)login_passwd, len, &aes, (unsigned char *)iv_, AES_ENCRYPT);
 		DEBUG_PRINT(base64_encode(login_passwd));
 		sprintf(login_passwd, "%s%s", iv, login_passwd);
 		sprintf(request_data, "request_data={\"login_key\": \"%s\",\"login_passwd\": \"%s\",\"devtoken\":\"APA91bGJEKHGnfimcCaqSdq09geZ3fsWm-asqIBjOjrPGLAsdQXm_sl2xtBv55SNuvaPHCIzobN4oUI8wSNTcT5JVovXDhuEJa5tXH7iejQUXJaqxzGcM47yUjswewBbTGR9ZWYSvmYo\"}", base64_encode(login_key), base64_encode(login_passwd)); 
@@ -588,7 +599,7 @@ void CKLBNetAPI::request_authkey(int timeout)
 	const char dev_data[] = "{\"Rating\":\"0\",\"Detail\" : \"This is a iOS device\"}";
 	char auth_data[1024] = "";
 	char auth_data_enc[1024] = "";
-	sprintf(auth_data, "{ \"1\":%s,\"2\": %s, \"3\": %s }", kc.getLoginKey(), kc.getLoginPw(), dev_data);
+	sprintf(auth_data, "{ \"1\":\"%s\",\"2\": \"%s\", \"3\": \"%s\" }", kc.getLoginKey(), kc.getLoginPw(), base64_encode(dev_data));
 
 	//Encrypt dummy token
 	unsigned char dummy_token[2048] = "";
@@ -597,10 +608,16 @@ void CKLBNetAPI::request_authkey(int timeout)
 	//Encrypt auth data
 	AES_KEY aes;
 	strncpy(AESKey2, AESKey1, 16);
+	DEBUG_PRINT("Length of AESKey2: %d",(int)strlen((char*)AESKey2));
 	AES_set_encrypt_key((unsigned char*)AESKey2, 128, &aes);
 	int len = strlen(auth_data);
-	AES_cbc_encrypt((unsigned char*)auth_data, (unsigned char*)auth_data_enc, len, &aes, (unsigned char *)iv, AES_ENCRYPT);
+	char iv_[32] = "";
+	for (int i = 0; i < strlen(iv); i++)
+		iv_[i] = iv[i];
+	AES_cbc_encrypt((unsigned char*)auth_data, (unsigned char*)auth_data_enc, len, &aes, (unsigned char *)iv_, AES_ENCRYPT);
+	DEBUG_PRINT(base64_encode(auth_data_enc));
 	sprintf(auth_data_enc, "%s%s", iv, auth_data_enc);
+	DEBUG_PRINT(base64_encode(auth_data_enc));
 	sprintf(request_data,"request_data={\"dummy_token\":\"%s\",\"auth_data\":\"%s\"}", base64_encode((char*)dummy_token), base64_encode(auth_data_enc));
 	form[0] = request_data;
 	form[1] = NULL;
@@ -610,7 +627,7 @@ void CKLBNetAPI::request_authkey(int timeout)
 	for (int i = 0; i < strlen(xorpad); i++) {
 		sessionKey[i] = xorpad[i] ^ AESKey1[i];
 	}
-	DEBUG_PRINT("New sessionKey: %s",base64_encode(sessionKey));
+	DEBUG_PRINT("Generated sessionKey: %s",base64_encode(sessionKey));
 	authkey = true;
 	http->httpPOST(url, false);
 }
