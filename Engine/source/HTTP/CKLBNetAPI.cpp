@@ -365,28 +365,63 @@ void CKLBNetAPI::startUp(int phase, int status_code)
 			extern char iv[32];
 			AES_KEY aes;
 			memcpy(AESKey, sessionKey, 16);
-			//DEBUG_PRINT(base64_encode(AESKey));
-			AES_set_encrypt_key((unsigned char*)AESKey, 128, &aes);
+			
+			//encrypt login_key
 			int len_login_key = strlen(kc.getLoginKey());
 			char login_key[512] = "";
 			char login_passwd[512] = "";
 			char iv_[32] = "";
 			for (int i = 0; i < 16; i++)
 				iv_[i] = iv[i];
-			AES_cbc_encrypt((unsigned char*)kc.getLoginKey(), (unsigned char*)login_key, len_login_key, &aes, (unsigned char *)iv_, AES_ENCRYPT);
-			//DEBUG_PRINT(base64_encode(login_key));
-			char login_key_[1024];
-			memcpy(login_key_, iv, 16);
-			memcpy(login_key_ + 16, login_key, len_login_key / 16 * 16 + 16);
-			int len = strlen(kc.getLoginPw());
+
+			int len_login_key_enc;
+			{
+				/* Initialise the library */
+				OpenSSL_add_all_algorithms();
+				EVP_CIPHER_CTX ctx;
+				EVP_CIPHER_CTX_init(&ctx);
+
+				/* Encrypt the plaintext */
+				int rv, ciphertext_len, tmp;
+				rv = EVP_EncryptInit_ex(&ctx, EVP_aes_128_cbc(), NULL, (unsigned char*)AESKey, (unsigned char*)iv_);
+				rv = EVP_EncryptUpdate(&ctx, (unsigned char*)login_key, &ciphertext_len, (unsigned char*)kc.getLoginKey(), len_login_key);
+				rv = EVP_EncryptFinal_ex(&ctx, (unsigned char*)login_key + ciphertext_len, &tmp);
+				ciphertext_len += tmp;
+				DEBUG_PRINT("Encrypted login_Key by EVP: %s, length: %d", base64_encode((char*)login_key, ciphertext_len), ciphertext_len);
+				len_login_key_enc = ciphertext_len + 16;
+			}
+			
+			
+			char login_key_enc[1024];
+			memcpy(login_key_enc, iv, 16);
+			memcpy(login_key_enc + 16, login_key, len_login_key_enc - 16);
+
+			//encrypt login_passwd
+			int len_login_passwd = strlen(kc.getLoginPw());
 			for (int i = 0; i < 16; i++)
 				iv_[i] = iv[i];
-			AES_cbc_encrypt((unsigned char*)kc.getLoginPw(), (unsigned char*)login_passwd, len, &aes, (unsigned char *)iv_, AES_ENCRYPT);
-			//DEBUG_PRINT(base64_encode(login_passwd));
-			char login_passwd_[1024];
-			memcpy(login_passwd_, iv, 16);
-			memcpy(login_passwd_ + 16, login_passwd, len / 16 * 16 + 16);
-			sprintf(request_data, "request_data={\"login_key\": \"%s\",\"login_passwd\": \"%s\",\"devtoken\":\"APA91bGJEKHGnfimcCaqSdq09geZ3fsWm-asqIBjOjrPGLAsdQXm_sl2xtBv55SNuvaPHCIzobN4oUI8wSNTcT5JVovXDhuEJa5tXH7iejQUXJaqxzGcM47yUjswewBbTGR9ZWYSvmYo\"}", base64_encode(login_key_, len_login_key / 16 * 16 + 32), base64_encode(login_passwd_, len / 16 * 16 + 32));
+
+			/* Initialise the library */
+			OpenSSL_add_all_algorithms();
+			EVP_CIPHER_CTX ctx;
+			EVP_CIPHER_CTX_init(&ctx);
+
+			int len_login_passwd_enc;
+			{
+				/* Encrypt the plaintext */
+				int rv, ciphertext_len, tmp;
+				rv = EVP_EncryptInit_ex(&ctx, EVP_aes_128_cbc(), NULL, (unsigned char*)AESKey, (unsigned char*)iv_);
+				rv = EVP_EncryptUpdate(&ctx, (unsigned char*)login_passwd, &ciphertext_len, (unsigned char*)kc.getLoginPw(), len_login_passwd);
+				rv = EVP_EncryptFinal_ex(&ctx, (unsigned char*)login_passwd + ciphertext_len, &tmp);
+				ciphertext_len += tmp;
+				DEBUG_PRINT("Encrypted login_passwd by EVP: %s, length: %d", base64_encode((char*)login_passwd, ciphertext_len), ciphertext_len);
+				len_login_passwd_enc = ciphertext_len + 16;
+			}
+			
+			char login_passwd_enc[1024];
+			memcpy(login_passwd_enc, iv, 16);
+			memcpy(login_passwd_enc + 16, login_passwd, len_login_passwd_enc - 16);
+			sprintf(request_data, "request_data={\"login_key\": \"%s\",\"login_passwd\": \"%s\",\"devtoken\":\"APA91bGJEKHGnfimcCaqSdq09geZ3fsWm-asqIBjOjrPGLAsdQXm_sl2xtBv55SNuvaPHCIzobN4oUI8wSNTcT5JVovXDhuEJa5tXH7iejQUXJaqxzGcM47yUjswewBbTGR9ZWYSvmYo\"}", base64_encode(login_key_enc, len_login_key_enc), base64_encode(login_passwd_enc, len_login_passwd_enc));
 			form[0] = request_data;
 			form[1] = NULL;
 
@@ -412,6 +447,7 @@ void CKLBNetAPI::startUp(int phase, int status_code)
 		}
 		case 1:
 		{
+			/*
 			// Do additional request. login/startWithoutInvite
 			char request_data[256];
 			const char* form[2];
@@ -440,7 +476,7 @@ void CKLBNetAPI::startUp(int phase, int status_code)
 			m_timestart = 0;			// Reset
 
 			KLBDELETEA(authorize);
-			return;
+			return;*/
 		}
 		case 2:
 		{
@@ -477,28 +513,63 @@ void CKLBNetAPI::login(int phase, int status_code)
 		extern char iv[32];
 		AES_KEY aes;
 		memcpy(AESKey, sessionKey, 16);
-		//DEBUG_PRINT(base64_encode(AESKey));
-		AES_set_encrypt_key((unsigned char*)AESKey, 128, &aes);
+
+		//encrypt login_key
 		int len_login_key = strlen(kc.getLoginKey());
 		char login_key[512] = "";
 		char login_passwd[512] = "";
 		char iv_[32] = "";
-		for (int i = 0; i < strlen(iv); i++)
+		for (int i = 0; i < 16; i++)
 			iv_[i] = iv[i];
-		AES_cbc_encrypt((unsigned char*)kc.getLoginKey(), (unsigned char*)login_key, len_login_key, &aes, (unsigned char *)iv_, AES_ENCRYPT);
-		//DEBUG_PRINT(base64_encode(login_key));
-		char login_key_[1024];
-		memcpy(login_key_, iv, 16);
-		memcpy(login_key_ + 16, login_key, len_login_key / 16 * 16 + 16);
-		int len = strlen(kc.getLoginPw());
-		for (int i = 0; i < strlen(iv); i++)
+
+		int len_login_key_enc;
+		{
+			/* Initialise the library */
+			OpenSSL_add_all_algorithms();
+			EVP_CIPHER_CTX ctx;
+			EVP_CIPHER_CTX_init(&ctx);
+
+			/* Encrypt the plaintext */
+			int rv, ciphertext_len, tmp;
+			rv = EVP_EncryptInit_ex(&ctx, EVP_aes_128_cbc(), NULL, (unsigned char*)AESKey, (unsigned char*)iv_);
+			rv = EVP_EncryptUpdate(&ctx, (unsigned char*)login_key, &ciphertext_len, (unsigned char*)kc.getLoginKey(), len_login_key);
+			rv = EVP_EncryptFinal_ex(&ctx, (unsigned char*)login_key + ciphertext_len, &tmp);
+			ciphertext_len += tmp;
+			DEBUG_PRINT("Encrypted login_Key by EVP: %s, length: %d", base64_encode((char*)login_key, ciphertext_len), ciphertext_len);
+			len_login_key_enc = ciphertext_len + 16;
+		}
+
+
+		char login_key_enc[1024];
+		memcpy(login_key_enc, iv, 16);
+		memcpy(login_key_enc + 16, login_key, len_login_key_enc - 16);
+
+		//encrypt login_passwd
+		int len_login_passwd = strlen(kc.getLoginPw());
+		for (int i = 0; i < 16; i++)
 			iv_[i] = iv[i];
-		AES_cbc_encrypt((unsigned char*)kc.getLoginPw(), (unsigned char*)login_passwd, len, &aes, (unsigned char *)iv_, AES_ENCRYPT);
-		//DEBUG_PRINT(base64_encode(login_passwd));
-		char login_passwd_[1024];
-		memcpy(login_passwd_, iv, 16);
-		memcpy(login_passwd_ + 16, login_passwd, len / 16 * 16 + 16);
-		sprintf(request_data, "request_data={\"login_key\": \"%s\",\"login_passwd\": \"%s\",\"devtoken\":\"APA91bGJEKHGnfimcCaqSdq09geZ3fsWm-asqIBjOjrPGLAsdQXm_sl2xtBv55SNuvaPHCIzobN4oUI8wSNTcT5JVovXDhuEJa5tXH7iejQUXJaqxzGcM47yUjswewBbTGR9ZWYSvmYo\"}", base64_encode(login_key_, len_login_key / 16 * 16 + 32), base64_encode(login_passwd_, len / 16 * 16 + 32));
+
+		/* Initialise the library */
+		OpenSSL_add_all_algorithms();
+		EVP_CIPHER_CTX ctx;
+		EVP_CIPHER_CTX_init(&ctx);
+
+		int len_login_passwd_enc;
+		{
+			/* Encrypt the plaintext */
+			int rv, ciphertext_len, tmp;
+			rv = EVP_EncryptInit_ex(&ctx, EVP_aes_128_cbc(), NULL, (unsigned char*)AESKey, (unsigned char*)iv_);
+			rv = EVP_EncryptUpdate(&ctx, (unsigned char*)login_passwd, &ciphertext_len, (unsigned char*)kc.getLoginPw(), len_login_passwd);
+			rv = EVP_EncryptFinal_ex(&ctx, (unsigned char*)login_passwd + ciphertext_len, &tmp);
+			ciphertext_len += tmp;
+			DEBUG_PRINT("Encrypted login_passwd by EVP: %s, length: %d", base64_encode((char*)login_passwd, ciphertext_len), ciphertext_len);
+			len_login_passwd_enc = ciphertext_len + 16;
+		}
+
+		char login_passwd_enc[1024];
+		memcpy(login_passwd_enc, iv, 16);
+		memcpy(login_passwd_enc + 16, login_passwd, len_login_passwd_enc - 16);
+		sprintf(request_data, "request_data={\"login_key\": \"%s\",\"login_passwd\": \"%s\",\"devtoken\":\"APA91bGJEKHGnfimcCaqSdq09geZ3fsWm-asqIBjOjrPGLAsdQXm_sl2xtBv55SNuvaPHCIzobN4oUI8wSNTcT5JVovXDhuEJa5tXH7iejQUXJaqxzGcM47yUjswewBbTGR9ZWYSvmYo\"}", base64_encode(login_key_enc, len_login_key_enc), base64_encode(login_passwd_enc, len_login_passwd_enc));
 		form[0] = request_data;
 		form[1] = NULL;
 
