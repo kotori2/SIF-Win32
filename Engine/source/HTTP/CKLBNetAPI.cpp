@@ -510,7 +510,7 @@ void CKLBNetAPI::login(int phase, int status_code)
 		// Request data
 		GetLocaleInfoA(LOCALE_USER_DEFAULT, LOCALE_SISO3166CTRYNAME, country_code, 4);
 		char AESKey[32] = "";
-		extern char iv[32];
+		//extern char iv[32];
 		AES_KEY aes;
 		memcpy(AESKey, sessionKey, 16);
 
@@ -626,45 +626,6 @@ void CKLBNetAPI::login(int phase, int status_code)
 		return;
 	}
 	}
-}
-
-int encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
-	unsigned char *iv, unsigned char *ciphertext)
-{
-	EVP_CIPHER_CTX *ctx;
-
-	int len;
-
-	int ciphertext_len;
-
-	/* Create and initialise the context */
-	ctx = EVP_CIPHER_CTX_new();
-
-	/* Initialise the encryption operation. IMPORTANT - ensure you use a key
-	* and IV size appropriate for your cipher
-	* In this example we are using 256 bit AES (i.e. a 256 bit key). The
-	* IV size for *most* modes is the same as the block size. For AES this
-	* is 128 bits */
-	EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv);
-		//handleErrors();
-
-	/* Provide the message to be encrypted, and obtain the encrypted output.
-	* EVP_EncryptUpdate can be called multiple times if necessary
-	*/
-	EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, plaintext_len);
-		//handleErrors();
-	ciphertext_len = len;
-
-	/* Finalise the encryption. Further ciphertext bytes may be written at
-	* this stage.
-	*/
-	EVP_EncryptFinal_ex(ctx, ciphertext + len, &len);
-	ciphertext_len += len;
-
-	/* Clean up */
-	EVP_CIPHER_CTX_free(ctx);
-
-	return ciphertext_len;
 }
 
 void CKLBNetAPI::request_authkey(int timeout)
@@ -827,11 +788,12 @@ CKLBNetAPI::execute(u32 deltaT)
 
 			if (authkey) {
 				char dummy_token[64] = "";
+				char dummy_token_[64] = "";
 				sprintf(dummy_token, "%s", m_pRoot->child()->child()->next()->getString());
 				DEBUG_PRINT("Got dummy_token from server: %s", dummy_token);
-				memcpy(dummy_token, base64_decode(dummy_token), 32);
+				memcpy(dummy_token_, base64_decode(dummy_token), 32);
 				for (int i = 0; i < 32; i++) {
-					sessionKey[i] = AESKey1[i] ^ dummy_token[i];
+					sessionKey[i] = AESKey1[i] ^ dummy_token_[i];
 				}
 				DEBUG_PRINT("Got new sessionKey: %s", base64_encode(sessionKey, 32));
 				authkey = false;
