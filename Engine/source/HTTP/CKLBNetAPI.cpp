@@ -650,17 +650,18 @@ void CKLBNetAPI::request_authkey(int timeout)
 		iv_[i] = iv[i];
 
 	/* Initialise the library */
-	ERR_load_crypto_strings();
 	OpenSSL_add_all_algorithms();
-	OPENSSL_config(NULL);
+	EVP_CIPHER_CTX ctx;
+	EVP_CIPHER_CTX_init(&ctx);
 
 	/* Encrypt the plaintext */
-	int ciphertext_len = encrypt((unsigned char*)auth_data, len, (unsigned char*)AESKey2, (unsigned char*)iv_, auth_data_enc);
+	int rv, ciphertext_len, tmp;
+	rv = EVP_EncryptInit_ex(&ctx, EVP_aes_128_cbc(), NULL, (unsigned char*)AESKey2, (unsigned char*)iv_);
+	rv = EVP_EncryptUpdate(&ctx, auth_data_enc, &ciphertext_len, (unsigned char*)auth_data, len);
+	rv = EVP_EncryptFinal_ex(&ctx, auth_data_enc + ciphertext_len, &tmp);
+	ciphertext_len += tmp;
 	DEBUG_PRINT("Encrypted data by EVP: %s, length: %d", base64_encode((char*)auth_data_enc, ciphertext_len));
-
-	for (int i = 0; i < strlen(iv); i++)
-		iv_[i] = iv[i];
-	AES_cbc_encrypt((unsigned char*)auth_data, (unsigned char*)auth_data_enc, len, &aes, (unsigned char *)iv_, AES_ENCRYPT);
+	
 	sprintf((char*)auth_data_enc, "%s%s", iv, auth_data_enc);
 	sprintf(request_data,"request_data={\"dummy_token\":\"%s\",\"auth_data\":\"%s\"}", base64_encode((char*)dummy_token, strlen((char*)dummy_token)), base64_encode((char*)auth_data_enc, strlen((char *)auth_data_enc)));
 	form[0] = request_data;
