@@ -36,8 +36,9 @@
 static int fail_times = 0;
 
 bool authkey;
-char iv[32] = "3153224930785570";
-char AESKey1[64] = "42243943565563339217974837635191";
+
+char iv[32] = "";
+char AESKey1[64] = "";
 char sessionKey[64] = "";
 
 enum {
@@ -421,7 +422,7 @@ void CKLBNetAPI::startUp(int phase, int status_code)
 			char login_passwd_enc[1024];
 			memcpy(login_passwd_enc, iv, 16);
 			memcpy(login_passwd_enc + 16, login_passwd, len_login_passwd_enc - 16);
-			sprintf(request_data, "request_data={\"login_key\": \"%s\",\"login_passwd\": \"%s\",\"devtoken\":\"APA91bGJEKHGnfimcCaqSdq09geZ3fsWm-asqIBjOjrPGLAsdQXm_sl2xtBv55SNuvaPHCIzobN4oUI8wSNTcT5JVovXDhuEJa5tXH7iejQUXJaqxzGcM47yUjswewBbTGR9ZWYSvmYo\"}", base64_encode(login_key_enc, len_login_key_enc), base64_encode(login_passwd_enc, len_login_passwd_enc));
+			sprintf(request_data, "request_data={\"login_key\": \"%s\",\"login_passwd\": \"%s\"}", base64_encode(login_key_enc, len_login_key_enc), base64_encode(login_passwd_enc, len_login_passwd_enc));
 			form[0] = request_data;
 			form[1] = NULL;
 
@@ -477,6 +478,18 @@ void CKLBNetAPI::startUp(int phase, int status_code)
 
 			KLBDELETEA(authorize);
 			return;*/
+
+			// Startup OK.
+			lua_callback(NETAPIMSG_STARTUP_SUCCESS, status_code, m_pRoot);
+			NetworkManager::releaseConnection(m_http);
+			kc.setToken(NULL);
+
+			m_http = NULL;
+			m_request_type = (-1);
+			m_netapi_phase = 0;
+			m_nonce = 1;
+
+			return;
 		}
 		case 2:
 		{
@@ -657,17 +670,18 @@ void CKLBNetAPI::request_authkey(int timeout)
 	
 	char AESKey2[32] = "";
 	//Generate AES key and iv.
+	
 	srand(time(0));
-	/*for (int i = 0; i < 32; i++) {
+	for (int i = 0; i < 32; i++) {
 		itoa(rand() % 10, str, 10);
 		strcat(AESKey1, str);
-	}*/
+	}
 	DEBUG_PRINT("Got AES key: %s", (const unsigned char *)AESKey1);
 
-	/*for (int i = 0; i < 16; i++) {
+	for (int i = 0; i < 16; i++) {
 		itoa(rand() % 10, str, 10);
 		strcat(iv, str);
-	}*/
+	}
 	DEBUG_PRINT("Got iv: %s", iv);
 
 	//Generate auth data
