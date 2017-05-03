@@ -1160,10 +1160,12 @@ CKLBNetAPI::commandScript(CLuaState& lua)
 			// 7. Absolute URL
 			//
 			CKLBNetAPIKeyChain& kc = CKLBNetAPIKeyChain::getInstance();
-			if(argc < 3 || argc > 7) {
+			if(argc < 3 || argc > 9) {
 				lua.retBoolean(false);
+				DEBUG_PRINT("No enough argc or argc exceed 9!");
 			}
 			else {
+				DEBUG_PRINT("Sending API...");
 				char api[MAX_PATH];
 				const char* end_point = "/api";
 
