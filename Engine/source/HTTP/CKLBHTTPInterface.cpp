@@ -159,7 +159,7 @@ void CKLBHTTPInterface::download() {
 						if(XMC_Force == NULL)
 						{
 							process_xms();
-							hash = HMAC(EVP_sha1(), sessionKey, strlen(sessionKey), reinterpret_cast<const u8*>(ptr + 1), content_len, NULL, NULL);
+							hash = HMAC(EVP_sha1(), sessionKey, 32, reinterpret_cast<const u8*>(ptr + 1), content_len, NULL, NULL);
 						}
 						else
 						{
