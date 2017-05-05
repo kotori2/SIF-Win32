@@ -58,48 +58,6 @@ bool xms_aleady_processed = false;
 extern char* XMC_Force;
 
 #ifdef _M_IX86
-void process_xms()
-{
-	if(xms_aleady_processed) return;
-
-	_asm {
-		xor eax,eax;
-		xor ebx,ebx;
-		xor edx,edx;
-		lea ecx,xms_key;
-
-		mov al,45;
-		mov bl,9;
-		mov byte ptr[ecx],al;
-		movzx ax,al;
-		div bl;
-		mov byte ptr[ecx+3],al;
-		mov bl,7;
-		sal bl,2;
-		mov byte ptr[ecx+1],bl;
-		sub bl,8;
-		mov byte ptr[ecx+2], bl;
-		mov bh,37;
-		mov byte ptr[ecx+4], bh;
-		mov edx,1528763663;
-		mov dword ptr[ecx+5], edx;
-		mov dl,84;
-		mov byte ptr[ecx+9], dl;
-		sub dl,13;
-		mov byte ptr[ecx+10], dl;
-		mov eax,1751217473;
-		mov ebx,51581957;
-		xor dword ptr[ecx],eax;
-		xor ebx,eax;
-		xor dword ptr[ecx+4],ebx;
-		mov dl,46;
-		xor byte ptr[ecx+10],dl;
-		xor byte ptr[ecx+9],dl;
-		xor byte ptr[ecx+8],dl;
-	}
-
-	xms_aleady_processed = true;
-}
 #else
 #error Unsupported arch
 #endif
@@ -158,7 +116,6 @@ void CKLBHTTPInterface::download() {
 
 						if(XMC_Force == NULL)
 						{
-							process_xms();
 							hash = HMAC(EVP_sha1(), sessionKey, 32, reinterpret_cast<const u8*>(ptr + 1), content_len, NULL, NULL);
 						}
 						else
