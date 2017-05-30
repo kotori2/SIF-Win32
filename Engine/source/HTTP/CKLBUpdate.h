@@ -40,6 +40,7 @@ public:
 private:
 	static int luaUpdateHasLock		(lua_State * L);
 	static int luaUpdateKillLock	(lua_State * L);
+	static int commandScript        (CLuaState& lua);
 };
 
 class CUpdateUnZip : public CUnZip

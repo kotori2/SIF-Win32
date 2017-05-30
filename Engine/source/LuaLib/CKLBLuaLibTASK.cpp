@@ -211,3 +211,4 @@ CKLBLuaLibTASK::setManagerPause(lua_State * L)
 	lua.retBoolean(true);
 	return 1;
 }
+

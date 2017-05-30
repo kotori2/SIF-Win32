@@ -32,6 +32,7 @@ CKLBLuaLibASSET::~CKLBLuaLibASSET() {}
 int get_asset_path_if_not_found(lua_State* L);
 int asset_start_download(lua_State* L);
 int asset_kill_download(lua_State* L);
+//int DownloadClient(lua_State* L);
 
 // Lua関数の追加
 void
@@ -49,8 +50,9 @@ CKLBLuaLibASSET::addLibrary()
 	addFunction("ASSET_startDownload",		asset_start_download);
 	addFunction("ASSET_killDownload",		asset_kill_download);
 	addFunction("Asset_getNMAssetSize",     CKLBLuaLibASSET::luaGetNMAssetSize);
-	addFunction("Asset_getNMAsset",     CKLBLuaLibASSET::luaGetNMAsset);
+	addFunction("Asset_getNMAsset",         CKLBLuaLibASSET::luaGetNMAsset); 
 	addFunction("Asset_setNMAsset",         CKLBLuaLibASSET::luaSetNMAsset);
+	addFunction("checkUncompleteUnzip",     CKLBLuaLibASSET::checkUncompleteUnzip);
 }
 
 s32
@@ -354,6 +356,8 @@ s32
 CKLBLuaLibASSET::luaGetNMAssetSize(lua_State* L)
 {
 	DEBUG_PRINT("ASSET_GetNMAssetSize");
+	CLuaState lua(L);
+	lua.print_stack();
 	return 0;
 }
 
@@ -361,6 +365,8 @@ s32
 CKLBLuaLibASSET::luaGetNMAsset(lua_State* L)
 {
 	DEBUG_PRINT("ASSET_GetNMAsset");
+	CLuaState lua(L);
+	lua.print_stack();
 	return 0;
 }
 
@@ -368,5 +374,16 @@ s32
 CKLBLuaLibASSET::luaSetNMAsset(lua_State* L)
 {
 	DEBUG_PRINT("ASSET_SetNMAsset");
+	CLuaState lua(L);
+	lua.print_stack();
+	return 0;
+}
+
+s32
+CKLBLuaLibASSET::checkUncompleteUnzip(lua_State* L)
+{
+	DEBUG_PRINT("checkUncompleteUnzip");
+	CLuaState lua(L);
+	lua.print_stack();
 	return 0;
 }

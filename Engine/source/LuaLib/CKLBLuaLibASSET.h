@@ -43,6 +43,7 @@ private:
 	static s32	luaGetNMAssetSize   (lua_State * L);
 	static s32	luaGetNMAsset       (lua_State * L);
 	static s32	luaSetNMAsset       (lua_State * L);
+	static s32	checkUncompleteUnzip(lua_State * L);
 };
 
 

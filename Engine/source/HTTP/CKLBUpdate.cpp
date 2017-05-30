@@ -39,11 +39,15 @@ static CKLBLuaLibUPDATE libdef(defcmd);
 CKLBLuaLibUPDATE::CKLBLuaLibUPDATE(DEFCONST * arrConstDef) : ILuaFuncLib(arrConstDef) {}
 CKLBLuaLibUPDATE::~CKLBLuaLibUPDATE() {}
 
+int DownloadClient(lua_State * L);
+
 void 
 CKLBLuaLibUPDATE::addLibrary()
 {
 	addFunction("ONLINE_hasLock",		CKLBLuaLibUPDATE::luaUpdateHasLock);
 	addFunction("ONLINE_killLock",		CKLBLuaLibUPDATE::luaUpdateKillLock);
+	addFunction("DownloadClient",       DownloadClient);
+	//addFunction("DownloadClient",       CKLBLuaLibUPDATE::commandScript);
 }
 
 int
@@ -66,9 +70,11 @@ CKLBLuaLibUPDATE::luaUpdateKillLock(lua_State * L)
 enum {
 	UPDATE_HASLOCK			= 0,
 	UPDATE_KILL_LOCK		= 1,
+	START_DL                = 2
 };
 
 static IFactory::DEFCMD cmd[] = {
+	{ "START_DL", START_DL },
 	{ 0, 0 }
 };
 
@@ -229,9 +235,9 @@ CKLBUpdate::saveUpdate()
 	}
 }
 
-/* No Command for now.
+
 int
-CKLBUpdate::commandScript(CLuaState& lua)
+CKLBLuaLibUPDATE::commandScript(CLuaState& lua)
 {
 	int argc = lua.numArgs();
 	if(argc < 2) {
@@ -242,8 +248,15 @@ CKLBUpdate::commandScript(CLuaState& lua)
 	int cmd = lua.getInt(2);
 	switch(cmd)
 	{
+	default:
+	{
+		lua.retBoolean(false);
 	}
-}*/
+	break;
+	case START_DL:
+		DEBUG_PRINT("START DL called.");
+	}
+}
 
 bool
 CKLBUpdate::initScript(CLuaState& lua)
@@ -488,4 +501,20 @@ CKLBUpdate::exec_finish(u32 /*deltaT*/)
 
 	TaskbarProgress::ProgressGreen();
 	TaskbarProgress::SetValue(0);
+}
+
+int DownloadClient(lua_State* L)
+{
+	CLuaState lua(L);
+	int argc = lua.numArgs();
+	DEBUG_PRINT("%d", argc);
+	lua.print_stack();
+	/*DEBUG_PRINT(arg1);
+	DEBUG_PRINT("%d", arg2);
+	DEBUG_PRINT("%d", arg3);
+	DEBUG_PRINT("%d", arg4);*/
+	//MicroDownload::Queue(lua.getString(1), lua.getString(2), lua.getString(3));
+	lua.retBool(true);
+
+	return 1;
 }

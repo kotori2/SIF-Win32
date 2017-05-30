@@ -1015,6 +1015,10 @@ CKLBUtility::jsonItem2lua(CLuaState& lua, CKLBJsonItem * pRoot)
 	if (pRoot) {
 		json2lua_rec(lua, pRoot);
 	}
+	else {
+		lua.retNil();
+	}
+
 }
 
 void

@@ -79,9 +79,6 @@
     <Filter Include="Source Files\Network\Element">
       <UniqueIdentifier>{f3224719-d252-4dd6-ab7b-3e7740486224}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Network\Task">
-      <UniqueIdentifier>{9f5f5749-ed18-4454-bca6-81e6a135628d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="libs\minizip">
       <UniqueIdentifier>{6c900c52-1fcf-46c6-9f7e-25b816b33bd6}</UniqueIdentifier>
     </Filter>
@@ -120,6 +117,9 @@
     </Filter>
     <Filter Include="Source Files\Rendering\Font">
       <UniqueIdentifier>{052c5c2d-5ab4-4d1a-bec4-dfa3854f63f3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\UISystem\Task\Task">
+      <UniqueIdentifier>{9f5f5749-ed18-4454-bca6-81e6a135628d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -432,7 +432,7 @@
       <Filter>Source Files\Network\Element</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\HTTP\CKLBStoreService.h">
-      <Filter>Source Files\Network\Task</Filter>
+      <Filter>Source Files\UISystem\Task\Task</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\Core\CKLBPauseCtrl.h">
       <Filter>Source Files\UtilTask</Filter>
@@ -555,7 +555,7 @@
       <Filter>Platform</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\HTTP\CKLBUpdate.h">
-      <Filter>Source Files\Network\Task</Filter>
+      <Filter>Source Files\UISystem\Task\Task</Filter>
     </ClInclude>
     <ClInclude Include="..\..\source\Core\ArrayAllocator.h">
       <Filter>Source Files\Core</Filter>
@@ -941,7 +941,7 @@
       <Filter>Source Files\Network\Element</Filter>
     </ClCompile>
     <ClCompile Include="..\..\source\HTTP\CKLBStoreService.cpp">
-      <Filter>Source Files\Network\Task</Filter>
+      <Filter>Source Files\UISystem\Task\Task</Filter>
     </ClCompile>
     <ClCompile Include="..\..\source\Core\CKLBGenericTask.cpp">
       <Filter>Source Files\UtilTask</Filter>
@@ -1052,7 +1052,7 @@
       <Filter>Platform</Filter>
     </ClCompile>
     <ClCompile Include="..\..\source\HTTP\CKLBUpdate.cpp">
-      <Filter>Source Files\Network\Task</Filter>
+      <Filter>Source Files\UISystem\Task\Task</Filter>
     </ClCompile>
     <ClCompile Include="..\..\source\Core\ITmpFile.cpp">
       <Filter>Source Files\Core</Filter>

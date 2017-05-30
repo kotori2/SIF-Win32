@@ -39,6 +39,7 @@ private:
 	static int clearStageTask	(lua_State * L);
 	static int setPause			(lua_State * L);
 	static int setManagerPause	(lua_State * L);
+
 };
 
 #endif // CKLBLuaLIbTASK_h
