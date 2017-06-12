@@ -70,6 +70,7 @@ protected:
 public:
 	CKLBUpdate();
 	virtual u32  getClassID	();
+	int commandScript(CLuaState & lua);
 	virtual bool initScript	(CLuaState& lua);
 
 	void execute			(u32 deltaT);

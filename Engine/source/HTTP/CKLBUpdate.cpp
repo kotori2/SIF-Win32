@@ -70,11 +70,13 @@ CKLBLuaLibUPDATE::luaUpdateKillLock(lua_State * L)
 enum {
 	UPDATE_HASLOCK			= 0,
 	UPDATE_KILL_LOCK		= 1,
-	START_DL                = 2
+	START_DL                = 2,
+	REUNZIP                 = 3
 };
 
 static IFactory::DEFCMD cmd[] = {
 	{ "START_DL", START_DL },
+	{ "REUNZIP", REUNZIP },
 	{ 0, 0 }
 };
 
@@ -237,7 +239,8 @@ CKLBUpdate::saveUpdate()
 
 
 int
-CKLBLuaLibUPDATE::commandScript(CLuaState& lua)
+//CKLBLuaLibUPDATE::commandScript(CLuaState& lua)
+CKLBUpdate::commandScript(CLuaState& lua)
 {
 	int argc = lua.numArgs();
 	if(argc < 2) {
@@ -254,7 +257,9 @@ CKLBLuaLibUPDATE::commandScript(CLuaState& lua)
 	}
 	break;
 	case START_DL:
-		DEBUG_PRINT("START DL called.");
+		DEBUG_PRINT("START DL called."); break;
+	case REUNZIP:
+		DEBUG_PRINT("REUNZIP called.");
 	}
 }
 
