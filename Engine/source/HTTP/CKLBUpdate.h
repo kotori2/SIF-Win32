@@ -66,9 +66,9 @@ class CKLBUpdate : public CKLBLuaTask
 {
 	friend class CKLBTaskFactory<CKLBUpdate>;
 protected:
-	CKLBUpdate();
 	virtual ~CKLBUpdate();
 public:
+	CKLBUpdate();
 	virtual u32  getClassID	();
 	virtual bool initScript	(CLuaState& lua);
 
@@ -91,7 +91,7 @@ protected:
 		   s32					workThread			();
 	static s32					threadFunc			(void* pThread, void* data);
 
-protected:
+public:
 	CKLBHTTPInterface	*	m_httpIF;
 	CUpdateUnZip		*	m_unzip;
 

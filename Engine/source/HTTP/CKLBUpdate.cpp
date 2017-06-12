@@ -394,6 +394,7 @@ CKLBUpdate::exec_download(u32 /*deltaT*/)
 				// Only perform callback here when progress is NOT complete.
 				if (!bResult) {
 					TaskbarProgress::ProgressGreen();
+					DEBUG_PRINT("Callback Process: %f",progress);
 					CKLBScriptEnv::getInstance().call_eventUpdateDownload(m_callbackDL, this, (double)progress, buf);
 				}
 			}
@@ -514,7 +515,9 @@ int DownloadClient(lua_State* L)
 	DEBUG_PRINT("%d", arg3);
 	DEBUG_PRINT("%d", arg4);*/
 	//MicroDownload::Queue(lua.getString(1), lua.getString(2), lua.getString(3));
-	lua.retBool(true);
-
+	//lua.retBool(true);
+	CKLBUpdate* aa = KLBNEW(CKLBUpdate);
+	aa->initScript(lua);
+	lua.retPointer(aa);
 	return 1;
 }
