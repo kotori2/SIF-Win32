@@ -83,7 +83,7 @@ static IFactory::DEFCMD cmd[] = {
 static CKLBTaskFactory<CKLBUpdate>		factoryA("ONLINE_Update",			CLS_KLBAPPUPDATE,		cmd);
 static CKLBTaskFactory<CKLBUpdateZip>	factoryB("ONLINE_CompleteZip",		CLS_KLBAPPUPDATEZIP,	cmd);
 
-enum {
+/*enum {
 	ARG_ZIPURL = 1,
 	ARG_ZIPSIZE,
 
@@ -95,6 +95,20 @@ enum {
 	ARG_ERROR_CALLBACK,
 
 	ARG_REQUIRE = ARG_TMPNAME,
+	ARG_NUM = ARG_ERROR_CALLBACK
+};*/
+
+enum {
+	ARG_DOWNLOAD_CALLBACK = 1,
+	ARG_UNZIP_START_CALLBACK,
+	ARG_UNZIP_CALLBACK,
+	ARG_PROGRESS_CALLBACK,
+	ARG_FINISH_CALLBACK,
+	ARG_DOWNLOAD_FINISH_CALLBACK,
+	ARG_ERROR_CALLBACK,
+	ARG_SPEED_CALLBACK,
+
+	//ARG_REQUIRE = ARG_TMPNAME,
 	ARG_NUM = ARG_ERROR_CALLBACK
 };
 
@@ -178,6 +192,7 @@ CKLBUpdate::CKLBUpdate()
 , m_callbackDL  (NULL)
 , m_callbackZIP (NULL)
 , m_callbackFinish  (NULL)
+, m_callbackProgress(NULL)
 , m_callbackError   (NULL)
 , m_tmpPath     (NULL)
 , m_zipURL      (NULL)
@@ -271,7 +286,7 @@ CKLBUpdate::initScript(CLuaState& lua)
 	lua.print_stack();
 
 	// 引数チェック
-	if(argc < ARG_REQUIRE || argc > 8) {
+	if(argc < 3 || argc > 8) {
 		return false;
 	}
 
@@ -279,17 +294,18 @@ CKLBUpdate::initScript(CLuaState& lua)
 	const char * callbackUnzip		= (argc >= ARG_UNZIP_CALLBACK)		? lua.getString(ARG_UNZIP_CALLBACK)		: NULL;
 	const char * callbackFinish		= (argc >= ARG_FINISH_CALLBACK)		? lua.getString(ARG_FINISH_CALLBACK)	: NULL;
 	const char * callbackError		= (argc >= ARG_ERROR_CALLBACK)		? lua.getString(ARG_ERROR_CALLBACK)		: NULL;
+	const char * callbackProgress   = (argc >= ARG_PROGRESS_CALLBACK)   ? lua.getString(ARG_PROGRESS_CALLBACK)  : NULL;
 	
 	const char * zip_url;
 	const char * zip_size;
 	const char * tmp_name;
-	zip_url				= lua.getString(ARG_ZIPURL);
-	zip_size			= lua.getString(ARG_ZIPSIZE);	// サイズは狂いがあると困るのでstringで受ける
-	tmp_name			= lua.getString(ARG_TMPNAME);
+	//zip_url				= lua.getString(ARG_ZIPURL);
+	//zip_size			= lua.getString(ARG_ZIPSIZE);	// サイズは狂いがあると困るのでstringで受ける
+	//tmp_name			= lua.getString(ARG_TMPNAME);
 
-	m_tmpPath			= CKLBUtility::copyString(tmp_name);
-	m_zipURL			= CKLBUtility::copyString(zip_url);
-	m_zipSize			= CKLBUtility::stringNum64(zip_size);
+	//m_tmpPath			= CKLBUtility::copyString(tmp_name);
+	//m_zipURL			= CKLBUtility::copyString(zip_url);
+	//m_zipSize			= CKLBUtility::stringNum64(zip_size);
 
 	m_eStep	= S_INIT_DL;
 	// Start from scratch and download
@@ -298,6 +314,7 @@ CKLBUpdate::initScript(CLuaState& lua)
 	m_callbackDL		= CKLBUtility::copyString(callbackDownload);
 	m_callbackZIP		= CKLBUtility::copyString(callbackUnzip);
 	m_callbackFinish	= CKLBUtility::copyString(callbackFinish);
+	m_callbackProgress  = CKLBUtility::copyString(callbackProgress);
 	m_callbackError		= callbackError ? CKLBUtility::copyString(callbackError) : NULL;
 
 	TaskbarProgress::ProgressGreen();
@@ -348,6 +365,7 @@ CKLBUpdate::die()
 	KLBDELETEA(m_tmpPath);
 	KLBDELETEA(m_callbackZIP);
 	KLBDELETEA(m_callbackDL);
+	KLBDELETEA(m_callbackProgress);
 	KLBDELETEA(m_callbackFinish);
 	KLBDELETEA(m_callbackError);
 
@@ -360,8 +378,8 @@ CKLBUpdate::exec_init_download(u32 /*deltaT*/)
 	TaskbarProgress::SetValue(0, 100);
 
 	m_httpIF->reuse();
-	m_httpIF->setDownload(m_tmpPath);	// ダウンロードモードで使用する
-	m_httpIF->httpGET(m_zipURL, false);	// zip取得のrequestを投げる
+	//m_httpIF->setDownload(m_tmpPath);	// ダウンロードモードで使用する
+	//m_httpIF->httpGET(m_zipURL, false);	// zip取得のrequestを投げる
 	m_eStep = S_DOWNLOAD;
 	m_maxProgress = -1.0f; // Force first callback when set to 0.0f
 }
@@ -377,8 +395,9 @@ CKLBUpdate::exec_download(u32 /*deltaT*/)
 
 	if(size != m_dlSize) {
 		m_dlSize = size;	// 読み込み済サイズを更新
-		if(m_callbackDL) {
-			float progress = (m_dlSize * 1000 / m_zipSize) / 1000.0f;
+		if(m_callbackProgress) {
+			float progress = 111.0f;
+			//float progress = (m_dlSize * 1000 / m_zipSize) / 1000.0f;
 			if (progress < 0.0f) {
 				progress = 0.0f;
 
@@ -400,7 +419,8 @@ CKLBUpdate::exec_download(u32 /*deltaT*/)
 				if (!bResult) {
 					TaskbarProgress::ProgressGreen();
 					DEBUG_PRINT("Callback Process: %f",progress);
-					CKLBScriptEnv::getInstance().call_eventUpdateDownload(m_callbackDL, this, (double)progress, buf);
+					CKLBScriptEnv::getInstance().call_eventUpdateDownload(m_callbackProgress, this, (double)progress, buf);
+					DEBUG_PRINT("Callback Finished. 2nd");
 				}
 			}
 		}

@@ -370,6 +370,7 @@ void CKLBScriptEnv::call_eventUpdateDownload(const char* funcName, CKLBObjectScr
 
 	CLuaState& lua = CKLBLuaEnv::getInstance().getState();
 	lua.callback(funcName,"PNNNNN",obj, 0, 0, 0, progress, progress); 
+	DEBUG_PRINT("Callback Finished.");
 }
 
 void CKLBScriptEnv::call_eventUpdateZIP		(const char* funcName, CKLBObjectScriptable* obj, int progress, int total) {

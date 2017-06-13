@@ -108,6 +108,7 @@ public:
 	const char			*	m_callbackDL;
 	const char			*	m_callbackZIP;
 	const char			*	m_callbackFinish;
+	const char          *   m_callbackProgress; 
 	const char			*	m_callbackError;
 	
 	void*					m_thread;
