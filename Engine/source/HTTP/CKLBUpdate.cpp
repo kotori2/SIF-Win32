@@ -20,6 +20,7 @@
 
 #include "CWin32Platform.h"
 #include "TaskbarProgress.h"
+#include "CKLBDatabase.h"
 
 /**
 	.lock file structure :
@@ -290,6 +291,7 @@ CKLBUpdate::initScript(CLuaState& lua)
 		return false;
 	}
 
+	CKLBDatabase::getInstance().init("file://external/download_queue_v20.db", SQLITE_OPEN_READONLY);
 	const char * callbackDownload	= (argc >= ARG_DOWNLOAD_CALLBACK)	? lua.getString(ARG_DOWNLOAD_CALLBACK)	: NULL;
 	const char * callbackUnzip		= (argc >= ARG_UNZIP_CALLBACK)		? lua.getString(ARG_UNZIP_CALLBACK)		: NULL;
 	const char * callbackFinish		= (argc >= ARG_FINISH_CALLBACK)		? lua.getString(ARG_FINISH_CALLBACK)	: NULL;
@@ -396,7 +398,7 @@ CKLBUpdate::exec_download(u32 /*deltaT*/)
 	if(size != m_dlSize) {
 		m_dlSize = size;	// 読み込み済サイズを更新
 		if(m_callbackProgress) {
-			float progress = 111.0f;
+			float progress = 0.0f;
 			//float progress = (m_dlSize * 1000 / m_zipSize) / 1000.0f;
 			if (progress < 0.0f) {
 				progress = 0.0f;
@@ -417,11 +419,9 @@ CKLBUpdate::exec_download(u32 /*deltaT*/)
 				m_maxProgress = progress;
 				// Only perform callback here when progress is NOT complete.
 				if (!bResult) {
-					TaskbarProgress::ProgressGreen();
-					DEBUG_PRINT("Callback Process: %f",progress);
-					CKLBScriptEnv::getInstance().call_eventUpdateDownload(m_callbackProgress, this, (double)progress, buf);
-					//CKLBScriptEnv::getInstance().call_DownloadSpeed(m_callbackProgress, this, (double)progress, buf);
-					DEBUG_PRINT("Callback Finished. 2nd");
+					//TaskbarProgress::ProgressGreen();
+					//DEBUG_PRINT("Callback Process: %f",progress);
+					CKLBScriptEnv::getInstance().call_eventUpdateDownload(m_callbackProgress, 0, 0);
 				}
 			}
 		}
@@ -436,7 +436,7 @@ CKLBUpdate::exec_download(u32 /*deltaT*/)
 			char buf[64];
 			CKLBUtility::numString64(buf, completeOnSize);
 			// Perform a 100% callback here because we know download IS complete.
-			CKLBScriptEnv::getInstance().call_eventUpdateDownload(m_callbackDL, this, (double)1.0, buf);
+			CKLBScriptEnv::getInstance().call_eventUpdateDownload(m_callbackDL, 0, 0);
 			saveUpdate();
 			m_eStep = S_INIT_UNZIP;
 		} else {

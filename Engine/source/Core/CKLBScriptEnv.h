@@ -128,7 +128,7 @@ public:
 	// World Task
 	void call_eventWorld			(const char* funcName, CKLBObjectScriptable* obj, s32 serial, s32 msg, s32 status);
 
-	void call_eventUpdateDownload	(const char* funcName, CKLBObjectScriptable* obj, double progress, const char* progressStr);
+	void call_eventUpdateDownload	(const char* funcName, int downloaded_count, int unzipped_count);
 	void call_DownloadSpeed			(const char * funcName, CKLBObjectScriptable * obj, double progress, const char * progressStr);
 	void call_eventUpdateZIP		(const char* funcName, CKLBObjectScriptable* obj, int progress, int total);
 	void call_eventUpdateComplete	(const char* funcName, CKLBObjectScriptable* obj);

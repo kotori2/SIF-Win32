@@ -363,14 +363,14 @@ void CKLBScriptEnv::call_eventWorld			(const char* funcName, CKLBObjectScriptabl
 	lua.callback(funcName,"III",serial,msg,status);
 }
 
-void CKLBScriptEnv::call_eventUpdateDownload(const char* funcName, CKLBObjectScriptable* obj, double progress, const char* progressStr) {
+void CKLBScriptEnv::call_eventUpdateDownload(const char* funcName, int downloaded_count, int unzipped_count) {
 	if (!funcName) { return; }
 
-	TaskbarProgress::SetValue(progress * 100);
+	//TaskbarProgress::SetValue(progress * 100);
 
 	CLuaState& lua = CKLBLuaEnv::getInstance().getState();
-	lua.callback(funcName, "IIIIII", 0, 0, 0, 0, 1, 1);
-	DEBUG_PRINT("Callback Finished.");
+	lua.callback(funcName, "IIIIII", 0, 0, 0, 0, downloaded_count, unzipped_count);
+	//DEBUG_PRINT("Callback Finished.");
 }
 
 void CKLBScriptEnv::call_DownloadSpeed(const char* funcName, CKLBObjectScriptable* obj, double progress, const char* progressStr) {
