@@ -113,13 +113,13 @@ public:
         const void * ret = lua_topointer(m_L, pos);
         return ret;
     }
-    inline const char * getTable(int pos) {
+    inline const char ** getTable(int pos) {
         if(!lua_istable(m_L, pos)) {
             // ポインタとは解釈できない
             errorMsg("TABLE", pos);
             return 0;
         }
-        const char * ret = lua_tostring(m_L, pos);
+        const char ** ret = (const char **)lua_topointer(m_L, pos);
         return ret;
     }
 

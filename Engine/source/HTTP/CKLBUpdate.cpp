@@ -153,6 +153,7 @@ CKLBUpdateZip::initScript(CLuaState& lua)
 	// bool res = true;
 
 	int argc = lua.numArgs();
+	lua.print_stack();
 
 	// 引数チェック
 	if(argc < ARG_ZIPREQUIRE || argc > ARG_ZIPNUM) {
@@ -259,23 +260,26 @@ int
 CKLBUpdate::commandScript(CLuaState& lua)
 {
 	int argc = lua.numArgs();
+	DEBUG_PRINT("commandScript print stack");
+	lua.print_stack();
 	if(argc < 2) {
 		lua.retBoolean(false);
 		return 1;
 	}
+	const char **url_list;
+	url_list = lua.getTable(4);
+	printf("%s", **url_list);
 
 	int cmd = lua.getInt(2);
-	switch(cmd)
-	{
-	default:
-	{
-		lua.retBoolean(false);
-	}
-	break;
-	case START_DL:
-		DEBUG_PRINT("START DL called."); break;
-	case REUNZIP:
-		DEBUG_PRINT("REUNZIP called.");
+	switch(cmd){
+		default:
+		{
+			lua.retBoolean(false);
+		}break;
+		case START_DL:
+			DEBUG_PRINT("START DL called."); break;
+		case REUNZIP:
+			DEBUG_PRINT("REUNZIP called.");
 	}
 }
 
@@ -284,7 +288,6 @@ CKLBUpdate::initScript(CLuaState& lua)
 {
 	// bool res = true;
 	int argc = lua.numArgs();
-	lua.print_stack();
 
 	// 引数チェック
 	if(argc < 3 || argc > 8) {
