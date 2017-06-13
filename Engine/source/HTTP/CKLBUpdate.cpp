@@ -266,9 +266,12 @@ CKLBUpdate::commandScript(CLuaState& lua)
 		lua.retBoolean(false);
 		return 1;
 	}
-	const char **url_list;
-	url_list = lua.getTable(4);
-	printf("%s", **url_list);
+	u32 send_json_size = 0;
+	const char* send_json = NULL;
+	lua.retValue(4);
+	send_json = CKLBUtility::lua2json(lua, send_json_size);
+	lua.pop(1);
+	DEBUG_PRINT(send_json);
 
 	int cmd = lua.getInt(2);
 	switch(cmd){
