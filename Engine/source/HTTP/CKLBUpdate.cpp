@@ -420,6 +420,7 @@ CKLBUpdate::exec_download(u32 /*deltaT*/)
 					TaskbarProgress::ProgressGreen();
 					DEBUG_PRINT("Callback Process: %f",progress);
 					CKLBScriptEnv::getInstance().call_eventUpdateDownload(m_callbackProgress, this, (double)progress, buf);
+					//CKLBScriptEnv::getInstance().call_DownloadSpeed(m_callbackProgress, this, (double)progress, buf);
 					DEBUG_PRINT("Callback Finished. 2nd");
 				}
 			}

@@ -369,8 +369,18 @@ void CKLBScriptEnv::call_eventUpdateDownload(const char* funcName, CKLBObjectScr
 	TaskbarProgress::SetValue(progress * 100);
 
 	CLuaState& lua = CKLBLuaEnv::getInstance().getState();
-	lua.callback(funcName,"PNNNNN",obj, 0, 0, 0, progress, progress); 
+	lua.callback(funcName, "IIIIII", 0, 0, 0, 0, 1, 1);
 	DEBUG_PRINT("Callback Finished.");
+}
+
+void CKLBScriptEnv::call_DownloadSpeed(const char* funcName, CKLBObjectScriptable* obj, double progress, const char* progressStr) {
+	if (!funcName) { return; }
+
+	TaskbarProgress::SetValue(progress * 100);
+
+	CLuaState& lua = CKLBLuaEnv::getInstance().getState();
+	lua.callback("__cb_kbps", "III", 20, 30, 100);
+	DEBUG_PRINT("Callback speed Finished.");
 }
 
 void CKLBScriptEnv::call_eventUpdateZIP		(const char* funcName, CKLBObjectScriptable* obj, int progress, int total) {
