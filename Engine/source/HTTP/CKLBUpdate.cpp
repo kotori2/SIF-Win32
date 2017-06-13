@@ -266,12 +266,27 @@ CKLBUpdate::commandScript(CLuaState& lua)
 		lua.retBoolean(false);
 		return 1;
 	}
-	u32 send_json_size = 0;
-	const char* send_json = NULL;
+	u32 json_size = 0;
+	const char* json = NULL;
 	lua.retValue(4);
-	send_json = CKLBUtility::lua2json(lua, send_json_size);
+	json = CKLBUtility::lua2json(lua, json_size);
 	lua.pop(1);
-	DEBUG_PRINT(send_json);
+	CKLBJsonItem * pRoot = CKLBJsonItem::ReadJsonData((const char *)json, json_size);
+	char url[1024];
+	int count = 0;
+	auto item = pRoot->child();
+	do{
+		strcpy(url, item->searchChild("url")->getString());
+		DEBUG_PRINT("TODO: Download %s, size %d bytes", url, item->searchChild("size")->getInt());
+		//Do download here
+		//Sleep(1000);
+		CKLBScriptEnv::getInstance().call_eventUpdateDownload(m_callbackProgress, count + 1, count);
+		//unzip here
+		//Sleep(100);
+		CKLBScriptEnv::getInstance().call_eventUpdateDownload(m_callbackProgress, count + 1, count + 1);
+		count++;
+	} while (item = item->next());
+	//DEBUG_PRINT(send_json);
 
 	int cmd = lua.getInt(2);
 	switch(cmd){
@@ -427,7 +442,7 @@ CKLBUpdate::exec_download(u32 /*deltaT*/)
 				if (!bResult) {
 					//TaskbarProgress::ProgressGreen();
 					//DEBUG_PRINT("Callback Process: %f",progress);
-					CKLBScriptEnv::getInstance().call_eventUpdateDownload(m_callbackProgress, 0, 0);
+					//CKLBScriptEnv::getInstance().call_eventUpdateDownload(m_callbackProgress, 0, 0);
 				}
 			}
 		}
