@@ -146,6 +146,8 @@ bool EngineTaskReference()
 #include "CKLBScrMgrSolid.h"
 #include "CKLBTexturePacker.h"
 
+#include "CryptoFunc.h"
+
 bool EngineLuaFuncReference()
 {
 	bool bResult = true;
@@ -169,6 +171,7 @@ bool EngineLuaFuncReference()
 	bResult = bResult && getFuncRegister<CKLBLuaLibUI>();
 	bResult = bResult && getFuncRegister<CKLBLuaLibUPDATE>();
 	bResult = bResult && getFuncRegister<CKLBLuaLibPackerControl>();
+	bResult = bResult && getFuncRegister<CRYPTOFunc>();
 	bResult = bResult && (0 != CKLBAppScriptIF::setValue);
 
 	return bResult;
