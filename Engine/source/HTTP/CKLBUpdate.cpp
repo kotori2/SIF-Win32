@@ -291,7 +291,7 @@ CKLBUpdate::commandScript(CLuaState& lua)
 			auto item = pRoot->child();
 			do {
 				strcpy(url, item->searchChild("url")->getString());
-				DEBUG_PRINT("TODO: Download %s, size %d bytes", url, item->searchChild("size")->getInt());
+				//DEBUG_PRINT("TODO: Download %s, size %d bytes", url, item->searchChild("size")->getInt());
 				m_tmpPath = "file://external/tmpDL.zip";
 				//Do download here
 				strcpy(url_list[count], url);
@@ -320,11 +320,12 @@ CKLBUpdate::initScript(CLuaState& lua)
 		return false;
 	}
 
-	const char * callbackDownload	= (argc >= ARG_DOWNLOAD_CALLBACK)	? lua.getString(ARG_DOWNLOAD_CALLBACK)	: NULL;
-	const char * callbackUnzip		= (argc >= ARG_UNZIP_CALLBACK)		? lua.getString(ARG_UNZIP_CALLBACK)		: NULL;
-	const char * callbackFinish		= (argc >= ARG_FINISH_CALLBACK)		? lua.getString(ARG_FINISH_CALLBACK)	: NULL;
-	const char * callbackError		= (argc >= ARG_ERROR_CALLBACK)		? lua.getString(ARG_ERROR_CALLBACK)		: NULL;
-	const char * callbackProgress   = (argc >= ARG_PROGRESS_CALLBACK)   ? lua.getString(ARG_PROGRESS_CALLBACK)  : NULL;
+	const char * callbackDownload	= (argc >= ARG_DOWNLOAD_CALLBACK)	? lua.getString(ARG_DOWNLOAD_CALLBACK)	 : NULL;
+	const char * callbackUnzipStart = (argc >= ARG_UNZIP_START_CALLBACK)? lua.getString(ARG_UNZIP_START_CALLBACK): NULL;
+	const char * callbackUnzip		= (argc >= ARG_UNZIP_CALLBACK)		? lua.getString(ARG_UNZIP_CALLBACK)		 : NULL;
+	const char * callbackFinish		= (argc >= ARG_FINISH_CALLBACK)		? lua.getString(ARG_FINISH_CALLBACK)	 : NULL;
+	const char * callbackError		= (argc >= ARG_ERROR_CALLBACK)		? lua.getString(ARG_ERROR_CALLBACK)		 : NULL;
+	const char * callbackProgress   = (argc >= ARG_PROGRESS_CALLBACK)   ? lua.getString(ARG_PROGRESS_CALLBACK)   : NULL;
 	
 	const char * zip_url;
 	const char * zip_size;
@@ -341,6 +342,7 @@ CKLBUpdate::initScript(CLuaState& lua)
 	// Start from scratch and download
 	m_dlSize			= -1;
 	m_zipEntry			= 0;
+	m_callbackZIPStart  = CKLBUtility::copyString(callbackUnzipStart);
 	m_callbackDL		= CKLBUtility::copyString(callbackDownload);
 	m_callbackZIP		= CKLBUtility::copyString(callbackUnzip);
 	m_callbackFinish	= CKLBUtility::copyString(callbackFinish);
@@ -378,7 +380,7 @@ CKLBUpdate::threadFunc(void* /*pThread*/, void* data)
 s32 
 CKLBUpdate::workThread() 
 {
-	while (m_eStep != S_MANAGER) {
+	while (m_eStep != S_COMPLETE) {
 		exec_unzip(0);
 	}
 	return 1;
@@ -413,7 +415,7 @@ CKLBUpdate::exec_multi_manager(u32 /*deltaT*/)
 		m_eStep = S_INIT_DL;
 	}
 	else {
-		m_eStep = S_COMPLETE;
+		m_eStep = S_FINISHED;
 		m_count = 0;
 	}
 		
@@ -481,7 +483,7 @@ CKLBUpdate::exec_download(u32 /*deltaT*/)
 			char buf[64];
 			CKLBUtility::numString64(buf, completeOnSize);
 			// Perform a 100% callback here because we know download IS complete.
-			CKLBScriptEnv::getInstance().call_eventUpdateDownload(m_callbackDL, 0, 0);
+			CKLBScriptEnv::getInstance().call_eventUpdateZIP(m_callbackZIPStart, m_count);
 			saveUpdate();
 			CKLBScriptEnv::getInstance().call_eventUpdateDownload(m_callbackProgress, m_count, m_count - 1);
 			m_eStep = S_INIT_UNZIP;
@@ -530,7 +532,7 @@ CKLBUpdate::exec_unzip(u32 /*deltaT*/)
 
 			// 現在展開済みのファイル数を得る
 			//int finished = m_unzip->getFinishedEntry();
-			CKLBScriptEnv::getInstance().call_eventUpdateZIP(m_callbackZIP, this, m_count, m_zipEntry);
+			//CKLBScriptEnv::getInstance().call_eventUpdateZIP(m_callbackZIP, this, m_count, m_zipEntry);
 
 			if(!bResult) {
 				// 展開終了
@@ -539,7 +541,7 @@ CKLBUpdate::exec_unzip(u32 /*deltaT*/)
 				// テンポラリzip削除
 				CPFInterface::getInstance().platform().removeTmpFile(m_tmpPath);
 				CKLBScriptEnv::getInstance().call_eventUpdateDownload(m_callbackProgress, m_count, m_count);
-				m_eStep = S_MANAGER;
+				m_eStep = S_COMPLETE;
 			}
 		}
 	}
@@ -559,8 +561,9 @@ CKLBUpdate::exec_complete(u32 /*deltaT*/)
 		CPFInterface::getInstance().platform().deleteThread(m_thread);
 		m_thread = NULL;
 	}
+	CKLBScriptEnv::getInstance().call_eventUpdateZIP(m_callbackZIP, m_count);
 	// Delete Update State file.
-	m_eStep = S_FINISHED;
+	m_eStep = S_MANAGER;
 	CPFInterface::getInstance().platform().removeTmpFile(gUpdateFile);
 
 	//TaskbarProgress::ProgressGreen();

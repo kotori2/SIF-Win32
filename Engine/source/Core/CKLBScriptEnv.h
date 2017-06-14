@@ -130,7 +130,7 @@ public:
 
 	void call_eventUpdateDownload	(const char* funcName, int downloaded_count, int unzipped_count);
 	void call_DownloadSpeed			(const char * funcName, CKLBObjectScriptable * obj, double progress, const char * progressStr);
-	void call_eventUpdateZIP		(const char* funcName, CKLBObjectScriptable* obj, int progress, int total);
+	void call_eventUpdateZIP		(const char* funcName, int progress);
 	void call_eventUpdateComplete	(const char* funcName, CKLBObjectScriptable* obj);
 	void call_eventUpdateError		(const char* funcName, CKLBObjectScriptable* obj);
 

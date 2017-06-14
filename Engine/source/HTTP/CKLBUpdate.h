@@ -109,6 +109,7 @@ public:
 	};
 
 	const char			*	m_callbackDL;
+	const char			*	m_callbackZIPStart;
 	const char			*	m_callbackZIP;
 	const char			*	m_callbackFinish;
 	const char          *   m_callbackProgress; 
