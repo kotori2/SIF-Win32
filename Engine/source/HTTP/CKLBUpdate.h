@@ -76,6 +76,8 @@ public:
 	void execute			(u32 deltaT);
 	void die				();
 
+	void exec_multi_manager(u32 deltaT);
+
 	static bool lockExist	();
 protected:
 	void exec_init_download	(u32 deltaT);
@@ -103,6 +105,7 @@ public:
 		S_UNZIP,		// ZIP展開中
 		S_COMPLETE,		// Ensure that zip is fully unzipped
 		S_FINISHED,		// 完了
+		S_MANAGER,		// Manage multi files download at a time
 	};
 
 	const char			*	m_callbackDL;

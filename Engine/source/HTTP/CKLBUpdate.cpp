@@ -30,6 +30,10 @@
 	Byte 2513..2999 : UNUSED.
  */
 static const char*	gUpdateFile = "file://external/_Upload_Task_Marker_.lock";
+int m_count = 0;
+int m_total = 0;
+char url_list[1024][1024];
+int size_list[1024];
 
 static ILuaFuncLib::DEFCONST defcmd[] = {
 	{ 0, 0 }
@@ -266,36 +270,40 @@ CKLBUpdate::commandScript(CLuaState& lua)
 		lua.retBoolean(false);
 		return 1;
 	}
-	u32 json_size = 0;
-	const char* json = NULL;
-	lua.retValue(4);
-	json = CKLBUtility::lua2json(lua, json_size);
-	lua.pop(1);
-	CKLBJsonItem * pRoot = CKLBJsonItem::ReadJsonData((const char *)json, json_size);
-	char url[1024];
-	int count = 0;
-	auto item = pRoot->child();
-	do{
-		strcpy(url, item->searchChild("url")->getString());
-		DEBUG_PRINT("TODO: Download %s, size %d bytes", url, item->searchChild("size")->getInt());
-		//Do download here
-		//Sleep(1000);
-		CKLBScriptEnv::getInstance().call_eventUpdateDownload(m_callbackProgress, count + 1, count);
-		//unzip here
-		//Sleep(100);
-		CKLBScriptEnv::getInstance().call_eventUpdateDownload(m_callbackProgress, count + 1, count + 1);
-		count++;
-	} while (item = item->next());
-	//DEBUG_PRINT(send_json);
-
+	
 	int cmd = lua.getInt(2);
 	switch(cmd){
 		default:
 		{
 			lua.retBoolean(false);
 		}break;
-		case START_DL:
-			DEBUG_PRINT("START DL called."); break;
+		case START_DL:{
+			DEBUG_PRINT("START DL called.");
+
+			u32 json_size = 0;
+			const char* json = NULL;
+			lua.retValue(4);
+			json = CKLBUtility::lua2json(lua, json_size);
+			lua.pop(1);
+			CKLBJsonItem * pRoot = CKLBJsonItem::ReadJsonData((const char *)json, json_size);
+			char url[1024];
+			int count = 0;
+			auto item = pRoot->child();
+			do {
+				strcpy(url, item->searchChild("url")->getString());
+				DEBUG_PRINT("TODO: Download %s, size %d bytes", url, item->searchChild("size")->getInt());
+				m_tmpPath = "file://external/tmpDL.zip";
+				//Do download here
+				strcpy(url_list[count], url);
+				size_list[count] = item->searchChild("size")->getInt();
+				//CKLBScriptEnv::getInstance().call_eventUpdateDownload(m_callbackProgress, count + 1, count);
+				//CKLBScriptEnv::getInstance().call_eventUpdateDownload(m_callbackProgress, count + 1, count + 1);
+				count++;
+			} while (item = item->next());
+			m_total = count;
+			m_eStep = S_MANAGER;
+			break;
+		}
 		case REUNZIP:
 			DEBUG_PRINT("REUNZIP called.");
 	}
@@ -312,7 +320,6 @@ CKLBUpdate::initScript(CLuaState& lua)
 		return false;
 	}
 
-	CKLBDatabase::getInstance().init("file://external/download_queue_v20.db", SQLITE_OPEN_READONLY);
 	const char * callbackDownload	= (argc >= ARG_DOWNLOAD_CALLBACK)	? lua.getString(ARG_DOWNLOAD_CALLBACK)	: NULL;
 	const char * callbackUnzip		= (argc >= ARG_UNZIP_CALLBACK)		? lua.getString(ARG_UNZIP_CALLBACK)		: NULL;
 	const char * callbackFinish		= (argc >= ARG_FINISH_CALLBACK)		? lua.getString(ARG_FINISH_CALLBACK)	: NULL;
@@ -340,8 +347,8 @@ CKLBUpdate::initScript(CLuaState& lua)
 	m_callbackProgress  = CKLBUtility::copyString(callbackProgress);
 	m_callbackError		= callbackError ? CKLBUtility::copyString(callbackError) : NULL;
 
-	TaskbarProgress::ProgressGreen();
-	TaskbarProgress::SetValue(0);
+	//TaskbarProgress::ProgressGreen();
+	//TaskbarProgress::SetValue(0);
 
 	return regist(NULL, P_NORMAL);
 }
@@ -357,6 +364,7 @@ CKLBUpdate::execute(u32 deltaT)
 	case S_UNZIP:		/* Now multithreaded */		break;
 	case S_COMPLETE:	exec_complete(deltaT);		break;
 	case S_FINISHED:	exec_finish(deltaT);		break;
+	case S_MANAGER:		exec_multi_manager(deltaT); break;
 	}
 }
 
@@ -370,7 +378,7 @@ CKLBUpdate::threadFunc(void* /*pThread*/, void* data)
 s32 
 CKLBUpdate::workThread() 
 {
-	while (m_eStep != S_COMPLETE) {
+	while (m_eStep != S_MANAGER) {
 		exec_unzip(0);
 	}
 	return 1;
@@ -385,7 +393,7 @@ CKLBUpdate::die()
 	}
 
 	KLBDELETEA(m_zipURL);
-	KLBDELETEA(m_tmpPath);
+	//KLBDELETEA(m_tmpPath);
 	KLBDELETEA(m_callbackZIP);
 	KLBDELETEA(m_callbackDL);
 	KLBDELETEA(m_callbackProgress);
@@ -396,13 +404,29 @@ CKLBUpdate::die()
 }
 
 void
+CKLBUpdate::exec_multi_manager(u32 /*deltaT*/)
+{
+	if (m_count < m_total) {
+		m_zipURL = CKLBUtility::copyString(url_list[m_count]);
+		m_zipSize = size_list[m_count];
+		m_count++;
+		m_eStep = S_INIT_DL;
+	}
+	else {
+		m_eStep = S_COMPLETE;
+		m_count = 0;
+	}
+		
+}
+
+void
 CKLBUpdate::exec_init_download(u32 /*deltaT*/)
 {
-	TaskbarProgress::SetValue(0, 100);
-
+	//TaskbarProgress::SetValue(0, 100);
+	DEBUG_PRINT("Downloading %s", m_zipURL);
 	m_httpIF->reuse();
-	//m_httpIF->setDownload(m_tmpPath);	// ダウンロードモードで使用する
-	//m_httpIF->httpGET(m_zipURL, false);	// zip取得のrequestを投げる
+	m_httpIF->setDownload(m_tmpPath);	// ダウンロードモードで使用する
+	m_httpIF->httpGET(m_zipURL, false);	// zip取得のrequestを投げる
 	m_eStep = S_DOWNLOAD;
 	m_maxProgress = -1.0f; // Force first callback when set to 0.0f
 }
@@ -419,8 +443,8 @@ CKLBUpdate::exec_download(u32 /*deltaT*/)
 	if(size != m_dlSize) {
 		m_dlSize = size;	// 読み込み済サイズを更新
 		if(m_callbackProgress) {
-			float progress = 0.0f;
-			//float progress = (m_dlSize * 1000 / m_zipSize) / 1000.0f;
+			//float progress = 0.0f;
+			float progress = (m_dlSize * 1000 / m_zipSize) / 1000.0f;
 			if (progress < 0.0f) {
 				progress = 0.0f;
 
@@ -441,7 +465,7 @@ CKLBUpdate::exec_download(u32 /*deltaT*/)
 				// Only perform callback here when progress is NOT complete.
 				if (!bResult) {
 					//TaskbarProgress::ProgressGreen();
-					//DEBUG_PRINT("Callback Process: %f",progress);
+					DEBUG_PRINT("Process: %f",progress);
 					//CKLBScriptEnv::getInstance().call_eventUpdateDownload(m_callbackProgress, 0, 0);
 				}
 			}
@@ -459,6 +483,7 @@ CKLBUpdate::exec_download(u32 /*deltaT*/)
 			// Perform a 100% callback here because we know download IS complete.
 			CKLBScriptEnv::getInstance().call_eventUpdateDownload(m_callbackDL, 0, 0);
 			saveUpdate();
+			CKLBScriptEnv::getInstance().call_eventUpdateDownload(m_callbackProgress, m_count, m_count - 1);
 			m_eStep = S_INIT_UNZIP;
 		} else {
 			CKLBScriptEnv::getInstance().call_eventUpdateError(m_callbackError, this);
@@ -475,8 +500,8 @@ CKLBUpdate::exec_init_unzip(u32 /*deltaT*/)
 	m_unzip = KLBNEWC(CUpdateUnZip, (fullpath));
 
 	if (!m_unzip->getStatus()) {	// invalid zip file
-		TaskbarProgress::SetValue(100, 100);
-		TaskbarProgress::ProgressRed();
+		//TaskbarProgress::SetValue(100, 100);
+		//TaskbarProgress::ProgressRed();
 		CKLBScriptEnv::getInstance().call_eventUpdateError(m_callbackError, this);
 		DEBUG_PRINT("[update] invalid zip file");
 		// do not change m_eStep, thus it will retry again as the download step do
@@ -487,8 +512,8 @@ CKLBUpdate::exec_init_unzip(u32 /*deltaT*/)
 	m_extracting = false;
 	m_eStep      = S_UNZIP;
 
-	TaskbarProgress::ProgressGreen();
-	TaskbarProgress::SetValue(0, m_zipEntry);
+	//TaskbarProgress::ProgressGreen();
+	//TaskbarProgress::SetValue(0, m_zipEntry);
 
 	m_thread = CPFInterface::getInstance().platform().createThread(threadFunc,this);
 }
@@ -504,8 +529,8 @@ CKLBUpdate::exec_unzip(u32 /*deltaT*/)
 			bResult = m_unzip->gotoNextFile();	// 次のファイルへ
 
 			// 現在展開済みのファイル数を得る
-			int finished = m_unzip->getFinishedEntry();
-			CKLBScriptEnv::getInstance().call_eventUpdateZIP(m_callbackZIP, this, finished, m_zipEntry);
+			//int finished = m_unzip->getFinishedEntry();
+			CKLBScriptEnv::getInstance().call_eventUpdateZIP(m_callbackZIP, this, m_count, m_zipEntry);
 
 			if(!bResult) {
 				// 展開終了
@@ -513,7 +538,8 @@ CKLBUpdate::exec_unzip(u32 /*deltaT*/)
 				m_unzip = NULL;
 				// テンポラリzip削除
 				CPFInterface::getInstance().platform().removeTmpFile(m_tmpPath);
-				m_eStep = S_COMPLETE;
+				CKLBScriptEnv::getInstance().call_eventUpdateDownload(m_callbackProgress, m_count, m_count);
+				m_eStep = S_MANAGER;
 			}
 		}
 	}
@@ -537,8 +563,8 @@ CKLBUpdate::exec_complete(u32 /*deltaT*/)
 	m_eStep = S_FINISHED;
 	CPFInterface::getInstance().platform().removeTmpFile(gUpdateFile);
 
-	TaskbarProgress::ProgressGreen();
-	TaskbarProgress::SetValue(0);
+	//TaskbarProgress::ProgressGreen();
+	//TaskbarProgress::SetValue(0);
 }
 
 void
@@ -547,8 +573,8 @@ CKLBUpdate::exec_finish(u32 /*deltaT*/)
 	CKLBScriptEnv::getInstance().call_eventUpdateComplete(m_callbackFinish, this);
 	kill();
 
-	TaskbarProgress::ProgressGreen();
-	TaskbarProgress::SetValue(0);
+	//TaskbarProgress::ProgressGreen();
+	//TaskbarProgress::SetValue(0);
 }
 
 int DownloadClient(lua_State* L)
@@ -557,12 +583,6 @@ int DownloadClient(lua_State* L)
 	int argc = lua.numArgs();
 	DEBUG_PRINT("%d", argc);
 	lua.print_stack();
-	/*DEBUG_PRINT(arg1);
-	DEBUG_PRINT("%d", arg2);
-	DEBUG_PRINT("%d", arg3);
-	DEBUG_PRINT("%d", arg4);*/
-	//MicroDownload::Queue(lua.getString(1), lua.getString(2), lua.getString(3));
-	//lua.retBool(true);
 	CKLBUpdate* aa = KLBNEW(CKLBUpdate);
 	aa->initScript(lua);
 	lua.retPointer(aa);
