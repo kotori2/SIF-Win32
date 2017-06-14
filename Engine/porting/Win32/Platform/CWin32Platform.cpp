@@ -240,7 +240,7 @@ CWin32Platform::openTmpFile(const char * filePath)
 	const char * target = "file://external/";
 	int len = strlen(target);
 
-	if(strstr(filePath, "pkg_") && IsDebuggerPresent()) DebugBreak();
+	// if(strstr(filePath, "pkg_") && IsDebuggerPresent()) DebugBreak();
 
 	if(!strncmp(filePath, target, len)) {
 		CWin32TmpFile * pTmpFile = new CWin32TmpFile(filePath);
