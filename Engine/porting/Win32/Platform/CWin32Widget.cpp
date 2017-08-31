@@ -21,6 +21,8 @@
 #include <comdef.h>
 #include <ctime>
 
+#include <vector>
+
 CWin32Widget *  CWin32Widget::m_pBegin   = NULL;
 CWin32Widget *  CWin32Widget::m_pEnd     = NULL;
 int             CWin32Widget::m_uniqBase = 0;
@@ -96,42 +98,67 @@ CWin32Widget::init(HWND hWnd, int id, int x, int y, int width, int height)
 int
 CWin32Widget::getTextLength()
 {
-	int length  = GetWindowTextLength(m_hWnd);
-	char * pBuf = new char [length + 1];
-	GetWindowText(m_hWnd, (LPSTR)pBuf, length + 1);
+	int length  = GetWindowTextLengthW(m_hWnd);
+	wchar_t * pBuf = new wchar_t [length + 1];
+	GetWindowTextW(m_hWnd, (LPWSTR)pBuf, length + 1);
 
 	// control から取得した文字列は ShiftJISなので、
 	// Engineが使用する UTF-8 文字列に変換したものの長さを計測する。
-	const char * utf8Str = m_pPlatform->SJIStoUTF8(pBuf);
+	//size_t charlen = (length + 1) * 2 * sizeof(wchar_t);
+	//char * utf8Str = new char[charlen];
+	/*
+	size_t res = wcstombs(utf8Str, pBuf, charlen);
 	length = strlen(utf8Str);
 	delete [] utf8Str;
 	delete [] pBuf;
+	*/
 
-	return length;
+	return WideCharToMultiByte(CP_UTF8, 0, pBuf, -1, NULL, 0, NULL, NULL);
 }
 
 bool
 CWin32Widget::getText(char * pBuf, int maxlen)
 {
-	int result = GetWindowText(m_hWnd, (LPSTR)pBuf, maxlen);
+	wchar_t* a = new wchar_t[maxlen + 1];
+	int result = GetWindowTextW(m_hWnd, a, maxlen + 1);
 	// 受けた文字列はShiftJISなので、EngineとしてはUTF8に変換する
-	const char * utf8Str = m_pPlatform->SJIStoUTF8(pBuf);
+	//const char * utf8Str = m_pPlatform->SJIStoUTF8(pBuf);
+	result = WideCharToMultiByte(CP_UTF8, 0, a, -1, pBuf, maxlen, NULL, NULL);
+	/*
 	int len = strlen(utf8Str);
 	if(len > maxlen) len = maxlen;
 	strncpy(pBuf, utf8Str, len);	// utf8に変換したものをバッファにコピー
 	pBuf[len] = 0;
 	delete [] utf8Str;
+	*/
+	delete[] a;
 	return (!result) ? false : true;
 }
 
 bool
 CWin32Widget::setText(const char * string)
 {
+	/*
 	// 渡された文字列はutf8なので、OSのコントロールに渡す前に ShiftJISに変換する
-	const char * sjisStr = m_pPlatform->utf8toSJIS(string);
-	int result = SetWindowText(m_hWnd, (LPSTR)sjisStr);
-	delete [] sjisStr;
-	return (!result) ? false : true;
+	size_t l = strlen(string);
+	size_t l_w = (l + 1) * 4;
+	wchar_t* a = new wchar_t[l_w];
+	//const char * sjisStr = m_pPlatform->utf8toSJIS(string);
+	mbstowcs(a, string, l_w - 1);
+	int result = SetWindowTextW(m_hWnd, a);
+	delete[] a;
+	//delete [] sjisStr;
+	*/
+	int result;
+	size_t len = MultiByteToWideChar(CP_UTF8, 0, string, -1, NULL, 0);
+	wchar_t* a = new wchar_t[len + 1];
+	result = MultiByteToWideChar(CP_UTF8, 0, string, -1, a, len);
+
+	if (result)
+		result = SetWindowTextW(m_hWnd, a);
+
+	delete[] a;
+	return result;
 }
 
 const char *
@@ -248,6 +275,15 @@ CWin32TextWidget::create(IWidget::CONTROL type, int id, const char * caption,
 							int x, int y, int width, int height)
 {
 	HWND hWnd = 0;
+	wchar_t* caption_str = NULL;
+
+	{
+		// Do char to wchar conversion
+		size_t len = (strlen(caption) + 1) * 4;
+		// Might be too overkill
+		caption_str = new wchar_t[len];
+		mbstowcs(caption_str, caption, len);
+	}
 
 	switch(type)
 	{
@@ -256,9 +292,9 @@ CWin32TextWidget::create(IWidget::CONTROL type, int id, const char * caption,
 		return false;
 	case TEXTBOX:
 		{
-			hWnd = CreateWindow(
-								TEXT("EDIT"),
-								caption,
+			hWnd = CreateWindowExW(0,
+								L"EDIT",
+								caption_str,
 								WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL | ES_LEFT,
 								x, y, width, height,
 								getPlatform().get_hWnd(),
@@ -269,8 +305,9 @@ CWin32TextWidget::create(IWidget::CONTROL type, int id, const char * caption,
 		break;
 	case PASSWDBOX:
 		{
-			hWnd = CreateWindow(TEXT("EDIT"),
-								caption,
+			hWnd = CreateWindowExW(0,
+								L"EDIT",
+								caption_str,
 								WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL | ES_LEFT|ES_PASSWORD,
 								x, y, width, height,
 								getPlatform().get_hWnd(),
