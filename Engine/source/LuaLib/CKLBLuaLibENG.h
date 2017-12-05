@@ -19,6 +19,7 @@
 #include "ILuaFuncLib.h"
 #include "CPFInterface.h"
 #include "CKLBTask.h"
+#include "CKLBLuaTask.h"
 
 class CKLBLuaLibENG : public ILuaFuncLib
 {
@@ -60,3 +61,19 @@ private:
 };
 
 #endif // CKLBLuaLibENG_h
+
+class NotificationManager : public CKLBLuaTask {
+	friend class CKLBTaskFactory<NotificationManager>;
+public:
+	NotificationManager();
+	virtual bool initScript(CLuaState & lua);
+	int commandScript(CLuaState & lua);
+	void execute(u32 deltaT);
+	void die();
+	void exec_require_permission(u32 deltaT);
+	enum STEP {
+		S_REQUIRE_PERMISSION,		// Require Permission.
+	};
+
+	STEP					m_eStep;
+};

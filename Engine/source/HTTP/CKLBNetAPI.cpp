@@ -38,8 +38,10 @@ static int fail_times = 0;
 bool authkey;
 
 char iv[32] = "";
-char AESKey1[64] = "";
-char sessionKey[64] = "";
+extern char sessionKey[32];
+char sessionKey_[32];
+bool sp = false;
+extern char aes_key_client[32];
 
 enum {
 	// Command Values
@@ -670,13 +672,6 @@ void CKLBNetAPI::request_authkey(int timeout)
 	
 	char AESKey2[32] = "";
 	//Generate AES key and iv.
-	
-	srand(time(0));
-	for (int i = 0; i < 32; i++) {
-		itoa(rand() % 10, str, 10);
-		strcat(AESKey1, str);
-	}
-	DEBUG_PRINT("Got AES key: %s", (const unsigned char *)AESKey1);
 
 	for (int i = 0; i < 16; i++) {
 		itoa(rand() % 10, str, 10);
@@ -692,11 +687,11 @@ void CKLBNetAPI::request_authkey(int timeout)
 
 	//Encrypt dummy token
 	unsigned char dummy_token[2048] = "";
-	RSA_public_encrypt(strlen(AESKey1), (unsigned char *)AESKey1, dummy_token, rsa, RSA_PKCS1_PADDING);
+	RSA_public_encrypt(strlen(aes_key_client), (unsigned char *)aes_key_client, dummy_token, rsa, RSA_PKCS1_PADDING);
 
 	//Encrypt auth data
 	AES_KEY aes;
-	strncpy(AESKey2, AESKey1, 16);
+	strncpy(AESKey2, aes_key_client, 16);
 	DEBUG_PRINT("Length of AESKey2: %d",(int)strlen((char*)AESKey2));
 	AES_set_encrypt_key((unsigned char*)AESKey2, 128, &aes);
 	int len = strlen(auth_data);
@@ -724,11 +719,6 @@ void CKLBNetAPI::request_authkey(int timeout)
 	form[0] = request_data;
 	form[1] = NULL;
 	m_http->setForm(form);
-	char xorpad[64];
-	sprintf(xorpad, "%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c", '\x02', '\x08', '\x11', '\x05', '\x20', '\x0d', '\x16', '\x1d', '\x0d', '\x04', '\x0c', '\x0a', '\x5b', '\x05', '\x09', '\x05', '\x0f', '\x44', '\x0b', '\x10', '\x06', '\x51', '\x15', '\x01', '\x59', '\x62', '\x0a', '\x0e', '\x02', '\x58', '\x1c', '\x0e');
-	for (int i = 0; i < 32; i++) {
-		sessionKey[i] = xorpad[i] ^ AESKey1[i];
-	}
 	DEBUG_PRINT("Generated sessionKey: %s",base64_encode(sessionKey, 32));
 	authkey = true;
 	http->httpPOST(url, false);
@@ -807,10 +797,30 @@ CKLBNetAPI::execute(u32 deltaT)
 				DEBUG_PRINT("Got dummy_token from server: %s", dummy_token);
 				memcpy(dummy_token_, base64_decode(dummy_token), 32);
 				for (int i = 0; i < 32; i++) {
-					sessionKey[i] = AESKey1[i] ^ dummy_token_[i];
+					sessionKey[i] = aes_key_client[i] ^ dummy_token_[i];
 				}
 				DEBUG_PRINT("Got new sessionKey: %s", base64_encode(sessionKey, 32));
 				authkey = false;
+			}
+			DEBUG_PRINT("Current EndPoint: %s", kc.getEndPoint());
+			const char* endPoint = kc.getEndPoint();
+			/*if (sp) {
+				DEBUG_PRINT("resetting sessionKey");
+				memcpy(sessionKey_, sessionKey, 32);//上个endpoint是特殊值时恢复sessionKey
+				sp = false;
+			}*/
+			if (endPoint == NULL) {
+				endPoint = "";
+			}
+			if (strstr(endPoint, "/play") || strstr(endPoint, "/execute")) {
+				DEBUG_PRINT("SPECIAL ENDPOINT FOUND");
+				memcpy(sessionKey, sessionKey_, 32);
+				DEBUG_PRINT("%s", sessionKey_);
+				sp = true;
+			}
+			else {
+				DEBUG_PRINT("BACKUP: %s", sessionKey);
+				memcpy(sessionKey_, sessionKey, 32);//备份sessionKey
 			}
 			
 			if(m_request_type == NETAPI_STARTUP)
@@ -1050,7 +1060,7 @@ void CKLBNetAPI::set_header(CKLBHTTPInterface* http, const char* authorize_strin
 	headers[0] = "API-Model: straightforward";
 	headers[1] = application_id;
 	headers[2] = authorize;
-	headers[3] = "Bundle-Version: 5.0.1";
+	headers[3] = bundle_version;
 	headers[4] = client_version;
 	headers[5] = "Debug: 1";
 	headers[6] = "OS: Android";
@@ -1169,8 +1179,11 @@ CKLBNetAPI::commandScript(CLuaState& lua)
 				char api[MAX_PATH];
 				const char* end_point = "/api";
 
-				if(lua.isString(4))
+				if (lua.isString(4)) {
 					end_point = lua.getString(4);
+					kc.setEndPoint(end_point);
+				}
+					
 
 				if(lua.isBool(7) && lua.getBool(7))
 					memcpy(api, end_point, strlen(end_point) + 1);

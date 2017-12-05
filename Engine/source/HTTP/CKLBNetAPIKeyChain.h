@@ -118,6 +118,13 @@ public:
 		m_loginPwd = passwd ? CKLBUtility::copyString(passwd) : NULL;
 		return m_loginPwd;
 	}
+
+	inline const char* setEndPoint(const char* endPoint)
+	{
+		KLBDELETEA(m_endPoint);
+		m_endPoint = endPoint ? CKLBUtility::copyString(endPoint) : NULL;
+		return m_endPoint;
+	}
     
     inline const char * getToken		() const { return m_token;	}
     inline const char * getRegion		() const { return m_region; }
@@ -127,7 +134,8 @@ public:
 	inline const char * getUserID		() const { return m_userID; }
 	inline const char * getURL			() const { return m_URL;      }
 	inline const char * getLoginKey		() const { return m_loginKey; }
-	inline const char * getLoginPw		() const { return m_loginPwd; }
+	inline const char * getLoginPw      () const { return m_loginPwd; }
+	inline const char * getEndPoint		() const { return m_endPoint; }
 
 	inline int genCmdNumID(char * retBuf, const char * body, time_t timeStamp, int serial) {
 		sprintf(retBuf, "%s.%d.%d",
@@ -146,6 +154,7 @@ private:
 	const char		*	m_URL;		// URL point
 	const char		*	m_loginKey;	// Login key. LOVELIVE_ID::user_id
 	const char		*	m_loginPwd;	// Login password. LOVELIVE_PW::passwd
+	const char      *   m_endPoint; 
 };
 
 #endif
