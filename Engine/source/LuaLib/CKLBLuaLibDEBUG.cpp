@@ -35,12 +35,14 @@ CKLBLuaLibDEBUG::CKLBLuaLibDEBUG(DEFCONST * arrConstDef) : ILuaFuncLib(arrConstD
 CKLBLuaLibDEBUG::~CKLBLuaLibDEBUG() {}
 
 // Lua関数の追加
+int requestExtensionEvent(lua_State *L);
 void
 CKLBLuaLibDEBUG::addLibrary()
 {
 	addFunction("DEBUG_SetCallback",		CKLBLuaLibDEBUG::luaDBGSetCallback);
 	addFunction("DEBUG_AddItem",			CKLBLuaLibDEBUG::luaDBGSetMenu);
 	addFunction("DEBUG_DelItem",			CKLBLuaLibDEBUG::luaDBGRemoveMenu);
+	addFunction("requestExtensionEvent",	requestExtensionEvent);
 }
 
 int
@@ -204,4 +206,10 @@ CKLBLuaLibDEBUG::removeMenu(const char * key)
 	CKLBDebugResource& dbg = CKLBDebugResource::getInstance();
 	dbg.removeGroup(key);
 #endif
+}
+
+int requestExtensionEvent(lua_State *L) {
+	CLuaState lua(L);
+	DEBUG_PRINT("requestExtensionEvent CALLED");
+	return 0;
 }
