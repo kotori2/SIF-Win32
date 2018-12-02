@@ -269,7 +269,7 @@ int NotificationManager::commandScript(CLuaState& lua) {
 }
 
 void NotificationManager::execute(u32 deltaT) {
-	DEBUG_PRINT("execute Called");
+	DEBUG_PRINT("execute Called, step %d", m_eStep);
 	switch (m_eStep)
 	{
 		case S_REQUIRE_PERMISSION:		exec_require_permission(deltaT); break;
@@ -291,5 +291,5 @@ int NotificationManage(lua_State * L) {
 	NotificationManager* NMP = KLBNEW(NotificationManager);
 	NMP->initScript(lua);
 	lua.retPointer(NMP);
-	return 0;
+	return 1;
 }
