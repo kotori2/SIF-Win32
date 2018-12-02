@@ -336,9 +336,10 @@ CKLBUIVirtualDoc::commandUI(CLuaState& lua, int argc, int cmd)
 	int ret = 0;
 	switch(cmd)
 	{
-	default:
+	default: {
+		DEBUG_PRINT("Unknown commandUI");
 		klb_assertAlways("[UI_VirtualDoc] unknown command 0x%04x.\n", cmd);
-
+	}
 	case UI_VDOC_CLEAR:
 		{
 			if(argc != 4) {
@@ -427,7 +428,8 @@ CKLBUIVirtualDoc::commandUI(CLuaState& lua, int argc, int cmd)
 				switch(dcmd)
 				{
 				default:	// 不明な描画コマンド値
-					klb_assertAlways("[UI_VirtualDoc] unknown draw command 0x%04x.\n", cmd);
+					DEBUG_PRINT("Unknown dcmd");
+					//klb_assertAlways("[UI_VirtualDoc] unknown draw command 0x%04x.\n", dcmd);
 					break;
 				case VD_DRAW_LINE:
 					{

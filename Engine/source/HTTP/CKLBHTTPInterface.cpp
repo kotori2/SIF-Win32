@@ -114,16 +114,8 @@ void CKLBHTTPInterface::download() {
 						char temp[41];
 						char xmc[64];
 
-						if(XMC_Force == NULL)
-						{
-							hash = HMAC(EVP_sha1(), sessionKey, 32, reinterpret_cast<const u8*>(ptr + 1), content_len, NULL, NULL);
-						}
-						else
-						{
-							//static size_t xmc_force_len = strlen(XMC_Force);
-							//static size_t xmc_len = strlen(sessionKey);
-							hash = HMAC(EVP_sha1(), sessionKey, 32, reinterpret_cast<const u8*>(ptr + 1), content_len, NULL, NULL);
-						}
+						
+						hash = HMAC(EVP_sha1(), sessionKey, 32, reinterpret_cast<const u8*>(ptr + 1), content_len, NULL, NULL);
 						for(int i = 0; i < 20; i++)
 						{
 							temp[i * 2 + 1] = 32;

@@ -681,7 +681,7 @@ void CKLBNetAPI::request_authkey(int timeout)
 
 	//Generate auth data
 	const char dev_data[] = "{\"Rating\":\"0\",\"Detail\" : \"This is a iOS device\"}";
-	char auth_data[1024] = "";
+	char auth_data[2048] = "";
 	unsigned char* auth_data_enc = (unsigned char*)calloc(1024, sizeof(unsigned char));
 	sprintf(auth_data, "{ \"1\":\"%s\",\"2\": \"%s\", \"3\": \"%s\" }", kc.getLoginKey(), kc.getLoginPw(), base64_encode(dev_data, strlen(dev_data)));
 

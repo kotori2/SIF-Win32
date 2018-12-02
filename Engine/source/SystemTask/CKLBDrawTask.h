@@ -38,6 +38,8 @@ public:
 
 	inline const int ox         () const { return m_ox;         }
 	inline const int oy         () const { return m_oy;         }
+	inline const int getScaleX	() const { return m_scaleX;     }
+	inline const int getScaleY	() const { return m_scaleY;     }
 
 	bool initResource(bool rotation, int width, int height);
 	void freeResource();

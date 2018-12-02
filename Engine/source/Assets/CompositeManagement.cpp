@@ -497,21 +497,21 @@ int CKLBCompositeAsset::readBoolean(int boolean) {
 
 int CKLBCompositeAsset::readInt(long long integerVal) 
 {
-	switch(m_parserField) {
+	switch (m_parserField) {
 	case ID:
-		m_pCurrInnerDef->id		 = (u32)integerVal;
+		m_pCurrInnerDef->id = (u32)integerVal;
 		break;
 	case CLIPX:
-		m_pCurrInnerDef->clipx	 = (s16)integerVal;
+		m_pCurrInnerDef->clipx = (s16)integerVal;
 		break;
 	case CLIPY:
-		m_pCurrInnerDef->clipy	 = (s16)integerVal;
+		m_pCurrInnerDef->clipy = (s16)integerVal;
 		break;
 	case CLIPW:
-		m_pCurrInnerDef->clipw	 = (s16)integerVal;
+		m_pCurrInnerDef->clipw = (s16)integerVal;
 		break;
 	case CLIPH:
-		m_pCurrInnerDef->cliph	 = (s16)integerVal;
+		m_pCurrInnerDef->cliph = (s16)integerVal;
 		break;
 	case CLIPSTART:
 		m_pCurrInnerDef->priorityClipStart = (u32)integerVal;
@@ -523,27 +523,27 @@ int CKLBCompositeAsset::readInt(long long integerVal)
 		m_pCurrInnerDef->radioID = (s32)integerVal;
 		break;
 	case PRIORITY_FIELD:
-		m_pCurrInnerDef->priority = (u32)integerVal;	
+		m_pCurrInnerDef->priority = (u32)integerVal;
 		break;
 	case X_FIELD:
-		m_pCurrInnerDef->x = (float)(m_bLowRes ? ((integerVal>>1)<<1) : integerVal);
+		m_pCurrInnerDef->x = (float)(m_bLowRes ? ((integerVal >> 1) << 1) : integerVal);
 		break;
-	case Y_FIELD:	
-		m_pCurrInnerDef->y = (float)(m_bLowRes ? ((integerVal>>1)<<1) : integerVal);
+	case Y_FIELD:
+		m_pCurrInnerDef->y = (float)(m_bLowRes ? ((integerVal >> 1) << 1) : integerVal);
 		break;
-	case SX_FIELD:	
+	case SX_FIELD:
 		m_pCurrInnerDef->sx = (s16)integerVal;
 		break;
-	case SY_FIELD:	
+	case SY_FIELD:
 		m_pCurrInnerDef->sy = (s16)integerVal;
 		break;
-	case SW_FIELD:	
+	case SW_FIELD:
 		m_pCurrInnerDef->sw = (s16)integerVal;
 		break;
-	case SH_FIELD:	
+	case SH_FIELD:
 		m_pCurrInnerDef->sh = (s16)integerVal;
 		break;
-	case LAYOUT_INFO_FIELD:	
+	case LAYOUT_INFO_FIELD:
 		m_pCurrInnerDef->layoutInfo = (u32)integerVal;
 		break;
 	case LW_FIELD:
@@ -560,15 +560,17 @@ int CKLBCompositeAsset::readInt(long long integerVal)
 		break;
 	case WIDTH_FIELD:
 		if (m_root != m_pCurrInnerDef) {
-			m_pCurrInnerDef->width	= (s16)integerVal;
-		} else {
+			m_pCurrInnerDef->width = (s16)integerVal;
+		}
+		else {
 			m_width = (s16)integerVal;
 		}
 		break;
 	case HEIGHT_FIELD:
 		if (m_root != m_pCurrInnerDef) {
-			m_pCurrInnerDef->height	= (s16)integerVal;
-		} else {
+			m_pCurrInnerDef->height = (s16)integerVal;
+		}
+		else {
 			m_height = (s16)integerVal;
 		}
 		break;
@@ -593,16 +595,16 @@ int CKLBCompositeAsset::readInt(long long integerVal)
 		m_pCurrAnim->timeShift = (s16)integerVal;
 		break;
 	case ANIM_FROMX:
-		m_pCurrAnim->fromX	= (s16)integerVal;
+		m_pCurrAnim->fromX = (s16)integerVal;
 		break;
 	case ANIM_TOX:
-		m_pCurrAnim->toX	= (s16)integerVal;
+		m_pCurrAnim->toX = (s16)integerVal;
 		break;
 	case ANIM_FROMY:
-		m_pCurrAnim->fromY	= (s16)integerVal;
+		m_pCurrAnim->fromY = (s16)integerVal;
 		break;
 	case ANIM_TOY:
-		m_pCurrAnim->toY	= (s16)integerVal;
+		m_pCurrAnim->toY = (s16)integerVal;
 		break;
 	case ANIM_FROMALPHA:
 		m_pCurrAnim->fromAlpha = (u8)integerVal;
@@ -611,14 +613,14 @@ int CKLBCompositeAsset::readInt(long long integerVal)
 		m_pCurrAnim->toAlpha = (u8)integerVal;
 		break;
 	case ANIM_FROMCOLOR:
-		m_pCurrAnim->fromR = (integerVal>>16) & 0xFF;
-		m_pCurrAnim->fromG = (integerVal>>8)  & 0xFF;
-		m_pCurrAnim->fromB = (integerVal)     & 0xFF;
+		m_pCurrAnim->fromR = (integerVal >> 16) & 0xFF;
+		m_pCurrAnim->fromG = (integerVal >> 8) & 0xFF;
+		m_pCurrAnim->fromB = (integerVal) & 0xFF;
 		break;
 	case ANIM_TOCOLOR:
-		m_pCurrAnim->toR = (integerVal>>16) & 0xFF;
-		m_pCurrAnim->toG = (integerVal>>8)  & 0xFF;
-		m_pCurrAnim->toB = (integerVal)     & 0xFF;
+		m_pCurrAnim->toR = (integerVal >> 16) & 0xFF;
+		m_pCurrAnim->toG = (integerVal >> 8) & 0xFF;
+		m_pCurrAnim->toB = (integerVal) & 0xFF;
 		break;
 	case ANIM_FROMSCALE:
 		m_pCurrAnim->fromScaleX = (float)integerVal;
@@ -641,13 +643,13 @@ int CKLBCompositeAsset::readInt(long long integerVal)
 		m_pCurrAnim->toScaleY = (float)integerVal;
 		break;
 	case ANIM_FROM_ROTATION:
-		m_pCurrAnim->fromRotation	= (float)integerVal;
+		m_pCurrAnim->fromRotation = (float)integerVal;
 		break;
 	case ANIM_TO_ROTATION:
-		m_pCurrAnim->toRotation		= (float)integerVal;
+		m_pCurrAnim->toRotation = (float)integerVal;
 		break;
 	case ANIM_LOOP:
-		m_pCurrAnim->loop	= (u8)integerVal;
+		m_pCurrAnim->loop = (u8)integerVal;
 		break;
 	case ANIM_PINGPONG:
 		m_pCurrAnim->pingpong = (u8)integerVal;
@@ -655,11 +657,12 @@ int CKLBCompositeAsset::readInt(long long integerVal)
 	case ANIM_DATA:
 		if (m_pCurrAnim->data == NULL) {
 			integerVal *= 4; // Key count into integer count
-			m_pCurrAnim->data		= KLBNEWA(s32, (u32)integerVal);
-			m_pCurrAnim->dataSize	= (u16)integerVal;
-			m_pCurrAnim->currSize	= 0;
-			m_pCurrAnim->spline		= 0; // Custom
-		} else {
+			m_pCurrAnim->data = KLBNEWA(s32, (u32)integerVal);
+			m_pCurrAnim->dataSize = (u16)integerVal;
+			m_pCurrAnim->currSize = 0;
+			m_pCurrAnim->spline = 0; // Custom
+		}
+		else {
 			if (m_pCurrAnim->currSize < m_pCurrAnim->dataSize) {
 				m_pCurrAnim->data[m_pCurrAnim->currSize++] = (s32)integerVal;
 			}
@@ -693,73 +696,73 @@ int CKLBCompositeAsset::readInt(long long integerVal)
 		// allow navigation			(webview)
 		// base invisible			(ui drag)
 		// align					(button/checkbox)
-		m_pCurrInnerDef->flag[0]			= (u8)integerVal;
+		m_pCurrInnerDef->flag[0] = (u8)integerVal;
 		break;
 	case FILLZERO_FIELD:
-		m_pCurrInnerDef->flag[2]			= (u8)integerVal;
+		m_pCurrInnerDef->flag[2] = (u8)integerVal;
 		break;
 	case ANIMATE_FIELD:
-		m_pCurrInnerDef->flag[1]			= (u8)integerVal;
+		m_pCurrInnerDef->flag[1] = (u8)integerVal;
 		break;
 	case COUNTCLIP_FIELD:
-		m_pCurrInnerDef->flag[3]			= 1 - (u8)integerVal;	// default
+		m_pCurrInnerDef->flag[3] = 1 - (u8)integerVal;	// default
 		break;
 	case VALUE_FIELD:
-		m_pCurrInnerDef->value				= (s32)integerVal;
+		m_pCurrInnerDef->value = (s32)integerVal;
 		break;
 	case PRIO_OFFSET_FIELD:
-		m_pCurrInnerDef->priorityClipStart	= (u32)integerVal;		// reuse field
+		m_pCurrInnerDef->priorityClipStart = (u32)integerVal;		// reuse field
 		break;
 	case DRAG_ALPHA_FIELD:
-		m_pCurrInnerDef->rotation			= (((float)integerVal) / 255.0f);		// reuse field
+		m_pCurrInnerDef->rotation = (((float)integerVal) / 255.0f);		// reuse field
 		break;
 	case CENTERX_FIELD:
-		m_pCurrInnerDef->clipx				= (s16)integerVal;	// reuse field
+		m_pCurrInnerDef->clipx = (s16)integerVal;	// reuse field
 		break;
 	case CENTERY_FIELD:
-		m_pCurrInnerDef->clipy				= (s16)integerVal;	// reuse field
+		m_pCurrInnerDef->clipy = (s16)integerVal;	// reuse field
 		break;
 	case START_PIX_FIELD:
-		m_pCurrInnerDef->clipw				= (s16)integerVal;	// reuse field
+		m_pCurrInnerDef->clipw = (s16)integerVal;	// reuse field
 		break;
 	case END_PIX_FIELD:
-		m_pCurrInnerDef->cliph				= (s16)integerVal;	// reuse field
+		m_pCurrInnerDef->cliph = (s16)integerVal;	// reuse field
 		break;
 	case ANIM_TIME_FIELD:
 	case NUMBERCOUNT_FIELD:
-		m_pCurrInnerDef->radioID			= (s32)integerVal;		// reuse field
+		m_pCurrInnerDef->radioID = (s32)integerVal;		// reuse field
 		break;
 	case STEPX_FIELD:
-		m_pCurrInnerDef->sx					= (s16)integerVal;
+		m_pCurrInnerDef->sx = (s16)integerVal;
 		break;
 	case STEPY_FIELD:
-		m_pCurrInnerDef->sy					= (s16)integerVal;
+		m_pCurrInnerDef->sy = (s16)integerVal;
 		break;
 	case ENABLE_FIELD:
-		m_pCurrInnerDef->flag[2]			= (u8)integerVal;
+		m_pCurrInnerDef->flag[2] = (u8)integerVal;
 		break;
 
 	case MINVALUE:
-		m_pCurrInnerDef->variable[VAR_MIN]			= (u32)integerVal;
+		m_pCurrInnerDef->variable[VAR_MIN] = (u32)integerVal;
 		break;
 	case MAXVALUE:
-		m_pCurrInnerDef->variable[VAR_MAX]			= (u32)integerVal;
+		m_pCurrInnerDef->variable[VAR_MAX] = (u32)integerVal;
 		break;
 	case SLIDERSIZE:
-		m_pCurrInnerDef->variable[VAR_SLIDERSIZE]	= (u32)integerVal;
+		m_pCurrInnerDef->variable[VAR_SLIDERSIZE] = (u32)integerVal;
 		break;
 	case MINSLIDERSIZE:
-		m_pCurrInnerDef->variable[VAR_MIN_SLIDERSIZE]	= (u32)integerVal;
+		m_pCurrInnerDef->variable[VAR_MIN_SLIDERSIZE] = (u32)integerVal;
 		break;
 	case SELECTCOLOR:
-		m_pCurrInnerDef->variable[VAR_SELECTCOLOR]	= (u32)integerVal;
+		m_pCurrInnerDef->variable[VAR_SELECTCOLOR] = (u32)integerVal;
 		break;
 
 	case MAXVERTEX:
-		m_pCurrInnerDef->variable[VAR_MAXVERTEX]	= (u32)integerVal;
+		m_pCurrInnerDef->variable[VAR_MAXVERTEX] = (u32)integerVal;
 		break;
 	case MAXINDEX:
-		m_pCurrInnerDef->variable[VAR_MAXINDEX]		= (u32)integerVal;
+		m_pCurrInnerDef->variable[VAR_MAXINDEX] = (u32)integerVal;
 		break;
 
 	case SPLINE_COUNT:
@@ -769,19 +772,19 @@ int CKLBCompositeAsset::readInt(long long integerVal)
 		m_pCurrInnerDef->splineLength = (u16)integerVal;
 		break;
 	case SPLINE_MASK:
-		m_pCurrInnerDef->splineMask			= ((u16)integerVal) | 3; // Always X&Y
+		m_pCurrInnerDef->splineMask = ((u16)integerVal) | 3; // Always X&Y
 		{
 			u8 size = 0;
-			for (int n=0; n < CKLBSplineNode::MODIFY_TOTALCOUNT; n++) {
-				if ((m_pCurrInnerDef->splineMask) & (1<<n)) {
+			for (int n = 0; n < CKLBSplineNode::MODIFY_TOTALCOUNT; n++) {
+				if ((m_pCurrInnerDef->splineMask) & (1 << n)) {
 					size += ((n == (CKLBSplineNode::MODIFY_SCALE)) ? 4 : 2);
 				}
 			}
-			m_pCurrInnerDef->splineVectorSize	= size;
+			m_pCurrInnerDef->splineVectorSize = size;
 		}
 		break;
 	case SPLINE_ARRAY:
-		*m_currArraySpline++		= (float)integerVal;
+		*m_currArraySpline++ = (float)integerVal;
 		break;
 	case GENERIC_FIELD:
 		m_pCurrInnerDef->propertyBag->setPropertyInt(tmpBuff, (s32)integerVal);
@@ -790,16 +793,30 @@ int CKLBCompositeAsset::readInt(long long integerVal)
 		m_pCurrInnerDef->visible = integerVal ? true : false;
 		break;
 	case MAXLENGTH:
-		m_pCurrInnerDef->clipw				= (u32)integerVal;
+		m_pCurrInnerDef->clipw = (u32)integerVal;
 		break;
 	case CHARTYPE:
-		m_pCurrInnerDef->cliph				= (u32)integerVal;
+		m_pCurrInnerDef->cliph = (u32)integerVal;
 		break;
 	case VOL_AUDIO_UP:
-		m_pCurrInnerDef->volAudioUp			= (u8)integerVal;
+		m_pCurrInnerDef->volAudioUp = (u8)integerVal;
+		break;
+	case anchorX:
+		DEBUG_PRINT("GET anchorX: %d", integerVal);
+		m_pCurrInnerDef->anchorX = (u8)integerVal;
+		break;
+	case anchorY:
+		DEBUG_PRINT("GET anchorY: %d", integerVal);
+		m_pCurrInnerDef->anchorY = (u8)integerVal;
+		break;
+	case anchor:
+		DEBUG_PRINT("GET anchor: %d", integerVal);
+		m_pCurrInnerDef->anchor = (u8)integerVal;
 		break;
 	case VOL_AUDIO_DOWN:
-		m_pCurrInnerDef->volAudioDown		= (u8)integerVal;
+		m_pCurrInnerDef->volAudioDown = (u8)integerVal;
+		break;
+	
 	}
     return 1;
 }  
@@ -1094,6 +1111,7 @@ static const key_name_value keywords5[] = {
 
 static const key_name_value keywords6[] = {
 	// Size 6
+	{ "anchor",(sizeof("anchor") - 1),CKLBCompositeAsset::anchor },
 	{"asset0",(sizeof("asset0")-1),CKLBCompositeAsset::ASSET_FIELD + 0},
 	{"asset1",(sizeof("asset1")-1),CKLBCompositeAsset::ASSET_FIELD + 1},
 	{"asset2",(sizeof("asset2")-1),CKLBCompositeAsset::ASSET_FIELD + 2},
@@ -1126,6 +1144,9 @@ static const key_name_value keywords7[] = {
 	// KEEP LIST IN ORDER !!! UPDATE USING EXCEL, NOT MANUALLY !!!!
 	// Update using EXCEL 
 	//
+
+	{"anchorX",(sizeof("anchorX")-1),CKLBCompositeAsset::anchorX},
+	{"anchorY",(sizeof("anchorY")-1),CKLBCompositeAsset::anchorY},
 	{"animate",(sizeof("animate")-1),CKLBCompositeAsset::ANIMATE_FIELD},
 	{"centerx",(sizeof("centerx")-1),CKLBCompositeAsset::CENTERX_FIELD},
 	{"centery",(sizeof("centery")-1),CKLBCompositeAsset::CENTERY_FIELD},

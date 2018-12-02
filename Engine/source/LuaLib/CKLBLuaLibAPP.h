@@ -32,6 +32,7 @@ public:
 private:
 	static int luaCallApplication	(lua_State * L);
 	static int luaGetPhysicalMem	(lua_State * L);
+	static int luaGetDateTimeNow(lua_State * L);
 public: // Lua-free
 	static bool callApplication(IPlatformRequest::APP_TYPE type, const char* addr, const char* subject, const char* body);
 };

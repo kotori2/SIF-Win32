@@ -525,7 +525,7 @@ int GameEngineMain(int argc, _TCHAR* argv[])
 	}
 	fprintf(stdout, "Status: Using GLEW %s\n", glewGetString(GLEW_VERSION));
 	
-	int WIDTH = 960;
+	int WIDTH = 1136;
 	int HEIGHT = 640;
 	
 	int fixedDelta = 0;

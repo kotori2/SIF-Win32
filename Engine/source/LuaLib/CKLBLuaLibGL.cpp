@@ -15,6 +15,7 @@
 */
 #include "CKLBLuaLibGL.h"
 #include "CKLBDrawTask.h"
+#include "CKLBGameApplication.h"
 #include "TextureManagement.h"
 #include "CKLBTouchPad.h"
 
@@ -44,6 +45,44 @@ CKLBLuaLibGL::addLibrary()
 	addFunction("GL_Unloadtexture",			CKLBLuaLibGL::luaGLUnloadTexture		);
 	addFunction("GL_Reloadtexture",			CKLBLuaLibGL::luaGLReloadTexture		);
 	addFunction("GL_DoScreenShot",			CKLBLuaLibGL::luaGLDoScreenShot			);
+	addFunction("GL_GetScreenScale",		CKLBLuaLibGL::luaGLGetScreenScale		);
+	addFunction("GL_GetRenderingAPI",		CKLBLuaLibGL::luaGLGetRenderingAPI		);
+	addFunction("GL_GetPhysicalSize",		CKLBLuaLibGL::luaGLGetPhysicalSize		);
+	addFunction("GL_GetUnsafeAreaSize",		CKLBLuaLibGL::luaGLGetUnsafeAreaSize	);
+	addFunction("GL_IsSafeAreaScreen",		CKLBLuaLibGL::luaGLIsSafeAreaScreen		);
+}
+
+int CKLBLuaLibGL::luaGLIsSafeAreaScreen(lua_State * L) {
+	CLuaState lua(L);
+	lua.retBool(true);
+	return 1;
+}
+
+int CKLBLuaLibGL::luaGLGetPhysicalSize(lua_State * L) {
+	CLuaState lua(L);
+	IClientRequest& itf = CPFInterface::getInstance().client();
+	lua.retInt(itf.getPhysicalScreenWidth());
+	lua.retInt(itf.getPhysicalScreenHeight());
+	return 2;
+}
+
+int CKLBLuaLibGL::luaGLGetUnsafeAreaSize(lua_State * L) {
+	CLuaState lua(L);
+	lua.retInt(0);
+	return 1;
+}
+
+int CKLBLuaLibGL::luaGLGetRenderingAPI(lua_State * L) {
+	return 0;
+}
+
+int CKLBLuaLibGL::luaGLGetScreenScale(lua_State * L) {
+	CLuaState lua(L);
+	CKLBDrawResource& draw = CKLBDrawResource::getInstance();
+
+	lua.retFloat(draw.getScaleX());
+	lua.retFloat(draw.getScaleY());
+	return 2;
 }
 
 /*static*/
