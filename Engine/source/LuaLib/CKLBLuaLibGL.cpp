@@ -28,33 +28,41 @@ CKLBLuaLibGL::~CKLBLuaLibGL() {}
 void
 CKLBLuaLibGL::addLibrary()
 {
-	addFunction("GL_SetResolution",			CKLBLuaLibGL::luaGLSetResolution		);
-	addFunction("GL_GetHorizontalBorder",	CKLBLuaLibGL::luaGLGetHorizontalBorder	);
-	addFunction("GL_GetVerticalBorder",		CKLBLuaLibGL::luaGLGetVerticalBorder	);
-	addFunction("GL_ClearColor",			CKLBLuaLibGL::luaGLClearColor			);
-	addFunction("GL_UseImageOffset",		CKLBLuaLibGL::luaGLUseImageOffset		);
-	addFunction("GL_LoadAsQuarterTexture",	CKLBLuaLibGL::luaGLSetQuarter			);
+	addFunction("GL_SetResolution",				CKLBLuaLibGL::luaGLSetResolution			);
+	addFunction("GL_GetHorizontalBorder",		CKLBLuaLibGL::luaGLGetHorizontalBorder		);
+	addFunction("GL_GetVerticalBorder",			CKLBLuaLibGL::luaGLGetVerticalBorder		);
+	addFunction("GL_ClearColor",				CKLBLuaLibGL::luaGLClearColor				);
+	addFunction("GL_UseImageOffset",			CKLBLuaLibGL::luaGLUseImageOffset			);
+	addFunction("GL_LoadAsQuarterTexture",		CKLBLuaLibGL::luaGLSetQuarter				);
 
-	addFunction("GL_CreateScreenAsset",		CKLBLuaLibGL::luaGLCreateScreenAsset	);
-	addFunction("GL_DoScreenShot",			CKLBLuaLibGL::luaGLDoScreenShot			);
-	addFunction("GL_FreeScreenAsset",		CKLBLuaLibGL::luaGLFreeScreenShot		);
+	addFunction("GL_CreateScreenAsset",			CKLBLuaLibGL::luaGLCreateScreenAsset		);
+	addFunction("GL_DoScreenShot",				CKLBLuaLibGL::luaGLDoScreenShot				);
+	addFunction("GL_FreeScreenAsset",			CKLBLuaLibGL::luaGLFreeScreenShot			);
 	
-	addFunction("SG_GetGuardBand",			CKLBLuaLibGL::luaGetGuardBand			);
-	addFunction("SG_SetGuardBand",			CKLBLuaLibGL::luaSetGuardBand			);
+	addFunction("SG_GetGuardBand",				CKLBLuaLibGL::luaGetGuardBand				);
+	addFunction("SG_SetGuardBand",				CKLBLuaLibGL::luaSetGuardBand				);
 
-	addFunction("GL_Unloadtexture",			CKLBLuaLibGL::luaGLUnloadTexture		);
-	addFunction("GL_Reloadtexture",			CKLBLuaLibGL::luaGLReloadTexture		);
-	addFunction("GL_DoScreenShot",			CKLBLuaLibGL::luaGLDoScreenShot			);
-	addFunction("GL_GetScreenScale",		CKLBLuaLibGL::luaGLGetScreenScale		);
-	addFunction("GL_GetRenderingAPI",		CKLBLuaLibGL::luaGLGetRenderingAPI		);
-	addFunction("GL_GetPhysicalSize",		CKLBLuaLibGL::luaGLGetPhysicalSize		);
-	addFunction("GL_GetUnsafeAreaSize",		CKLBLuaLibGL::luaGLGetUnsafeAreaSize	);
-	addFunction("GL_IsSafeAreaScreen",		CKLBLuaLibGL::luaGLIsSafeAreaScreen		);
+	addFunction("GL_Unloadtexture",				CKLBLuaLibGL::luaGLUnloadTexture			);
+	addFunction("GL_Reloadtexture",				CKLBLuaLibGL::luaGLReloadTexture			);
+	addFunction("GL_DoScreenShot",				CKLBLuaLibGL::luaGLDoScreenShot				);
+	addFunction("GL_GetScreenScale",			CKLBLuaLibGL::luaGLGetScreenScale			);
+	addFunction("GL_GetRenderingAPI",			CKLBLuaLibGL::luaGLGetRenderingAPI			);
+	addFunction("GL_GetPhysicalSize",			CKLBLuaLibGL::luaGLGetPhysicalSize			);
+	addFunction("GL_GetUnsafeAreaSize",			CKLBLuaLibGL::luaGLGetUnsafeAreaSize		);
+	addFunction("GL_IsSafeAreaScreen",			CKLBLuaLibGL::luaGLIsSafeAreaScreen			);
+	addFunction("GL_ComputeMatrixFromToRect",	CKLBLuaLibGL::luaGLComputeMatrixFromToRect	);
+}
+
+//TODO
+int CKLBLuaLibGL::luaGLComputeMatrixFromToRect(lua_State * L) {
+	CLuaState lua(L);
+	lua.retInt(0);
+	return 1;
 }
 
 int CKLBLuaLibGL::luaGLIsSafeAreaScreen(lua_State * L) {
 	CLuaState lua(L);
-	lua.retBool(true);
+	lua.retBool(false);
 	return 1;
 }
 

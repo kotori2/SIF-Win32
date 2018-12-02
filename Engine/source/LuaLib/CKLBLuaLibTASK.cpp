@@ -46,6 +46,12 @@ CKLBLuaLibTASK::addLibrary()
 
 	// タスクマネージャレベルでpauseをかける
 	addFunction("TASK_ManagerPause",	CKLBLuaLibTASK::setManagerPause);
+	addFunction("TASKUI_setMatrix",		CKLBLuaLibTASK::setMatrix);
+}
+
+int
+CKLBLuaLibTASK::setMatrix(lua_State * L) {
+	return 0;
 }
 
 int

@@ -32,24 +32,25 @@ public:
 	
 
 private:
-	static int luaGLSetResolution		(lua_State * L);
-	static int luaGLClearColor			(lua_State * L);
-	static int luaGLUseImageOffset		(lua_State * L);
-	static int luaGetGuardBand			(lua_State * L);
-	static int luaSetGuardBand			(lua_State * L);
-	static int luaGLCreateScreenAsset	(lua_State * L);
-	static int luaGLDoScreenShot		(lua_State * L);
-	static int luaGLFreeScreenShot		(lua_State * L);
-	static int luaGLGetHorizontalBorder	(lua_State * L);
-	static int luaGLGetVerticalBorder	(lua_State * L);
-	static int luaGLSetQuarter			(lua_State * L);
-	static int luaGLReloadTexture		(lua_State * L);
-	static int luaGLUnloadTexture		(lua_State * L);
-	static int luaGLGetScreenScale		(lua_State * L);
-	static int luaGLGetUnsafeAreaSize	(lua_State * L);
-	static int luaGLGetPhysicalSize		(lua_State * L);
-	static int luaGLGetRenderingAPI		(lua_State * L);
-	static int luaGLIsSafeAreaScreen	(lua_State * L);
+	static int luaGLSetResolution			(lua_State * L);
+	static int luaGLClearColor				(lua_State * L);
+	static int luaGLUseImageOffset			(lua_State * L);
+	static int luaGetGuardBand				(lua_State * L);
+	static int luaSetGuardBand				(lua_State * L);
+	static int luaGLCreateScreenAsset		(lua_State * L);
+	static int luaGLDoScreenShot			(lua_State * L);
+	static int luaGLFreeScreenShot			(lua_State * L);
+	static int luaGLGetHorizontalBorder		(lua_State * L);
+	static int luaGLGetVerticalBorder		(lua_State * L);
+	static int luaGLSetQuarter				(lua_State * L);
+	static int luaGLReloadTexture			(lua_State * L);
+	static int luaGLUnloadTexture			(lua_State * L);
+	static int luaGLGetScreenScale			(lua_State * L);
+	static int luaGLGetUnsafeAreaSize		(lua_State * L);
+	static int luaGLGetPhysicalSize			(lua_State * L);
+	static int luaGLGetRenderingAPI			(lua_State * L);
+	static int luaGLIsSafeAreaScreen		(lua_State * L);
+	static int luaGLComputeMatrixFromToRect	(lua_State * L);
 	
 		
 public:
