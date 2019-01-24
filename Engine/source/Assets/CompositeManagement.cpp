@@ -813,36 +813,40 @@ int CKLBCompositeAsset::readInt(long long integerVal)
 		DEBUG_PRINT("GET anchor: %d", integerVal);
 		m_pCurrInnerDef->anchor = (u8)integerVal;
 		switch (m_pCurrInnerDef->anchor) {
-		case 1:
-			m_pCurrInnerDef->x = 960 - m_pCurrInnerDef->x;
-			if (m_width){
-				DEBUG_PRINT("m_width: %d", m_width);
-				m_pCurrInnerDef->x -= m_width;
+			case 1:
+				m_pCurrInnerDef->x = m_pCurrInnerDef->x;
+				if (m_width){
+					m_pCurrInnerDef->x -= m_width;
+				}
+				break;
+			case 2:
+				// not sure about this
+				if (m_pCurrInnerDef->y < 0) {
+					m_pCurrInnerDef->y = m_pCurrInnerDef->y + 1180;
+					m_pCurrInnerDef->y += m_pCurrInnerDef->height; 
+				}
+				else if (m_pCurrInnerDef->y <= 100) {
+					m_pCurrInnerDef->y = m_pCurrInnerDef->y - 100;
+					m_pCurrInnerDef->y -= m_pCurrInnerDef->height;
+				}
+				else {
+					m_pCurrInnerDef->y = 640 - m_pCurrInnerDef->y;
+					m_pCurrInnerDef->y -= m_pCurrInnerDef->height;
+				}
+				break;
+			case 3:
+				m_pCurrInnerDef->x = 960 - m_pCurrInnerDef->x;
+				if (m_pCurrInnerDef->width) {
+					m_pCurrInnerDef->x -= m_pCurrInnerDef->width;
+				}
+				m_pCurrInnerDef->y = 640 - m_pCurrInnerDef->y;
+				if (m_pCurrInnerDef->height) {
+					m_pCurrInnerDef->y -= m_pCurrInnerDef->height;
+				}
+				break;
+			default: {
+				break;
 			}
-			DEBUG_PRINT("X transformed to: %f", m_pCurrInnerDef->x);
-			break;
-		case 2:
-			DEBUG_PRINT("Y transformed from: %f", m_pCurrInnerDef->y);
-			m_pCurrInnerDef->y = 640 - m_pCurrInnerDef->y;
-			if (m_pCurrInnerDef->height) {
-				DEBUG_PRINT("Height exist: %d", m_pCurrInnerDef->y);
-				m_pCurrInnerDef->y -= m_pCurrInnerDef->height;
-			}
-			DEBUG_PRINT("Y transformed to: %f", m_pCurrInnerDef->y);
-			break;
-		case 3:
-			m_pCurrInnerDef->x = 960 - m_pCurrInnerDef->x;
-			if (m_pCurrInnerDef->width) {
-				m_pCurrInnerDef->x -= m_pCurrInnerDef->width;
-			}
-			DEBUG_PRINT("X transformed to: %f", m_pCurrInnerDef->x);
-			m_pCurrInnerDef->y = 640 - m_pCurrInnerDef->y;
-			if (m_pCurrInnerDef->height) {
-				m_pCurrInnerDef->y -= m_pCurrInnerDef->height;
-			}
-			DEBUG_PRINT("Y transformed to: %f", m_pCurrInnerDef->y);
-			break;
-		default: DEBUG_PRINT("invalid anchor param %d", m_pCurrInnerDef->anchor);
 		}
 		break;
 	case VOL_AUDIO_DOWN:
@@ -1002,7 +1006,6 @@ int CKLBCompositeAsset::readString(const unsigned char * stringVal, size_t strin
 		break;
 	case NAME_FIELD:
 		m_pCurrInnerDef->name					= this->registerString((const char*)stringVal, stringLen, &err);
-		DEBUG_PRINT((const char*)stringVal);
 		break;
 	case FONT_NAME_FIELD:
 		m_pCurrInnerDef->fontName				= this->registerString((const char*)stringVal, stringLen, &err);

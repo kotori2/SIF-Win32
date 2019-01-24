@@ -27,6 +27,7 @@
 #ifdef _WIN32
 #include <Windows.h>
 #include "SIF_Win32.h"
+#include <ctype.h>
 
 #ifdef DEBUG_LUAEDIT
 #include "RemoteDebugger.hpp"
@@ -91,8 +92,14 @@ int HASH_SHA1(lua_State* L)
 	snprintf_t snprintf = &sprintf_s;
 #endif
 
-	for (int i = 0; i < 20; i++)
-		snprintf(out+i*2, 4, "%02x", hash[i]);
+	for (int i = 0; i < 20; i++) {
+		snprintf(out + i * 2, 4, "%02x", hash[i]);
+		out[i] = toupper(out[i]);
+	}
+	
+	for (int i = 0; i < strlen(out); i++) {
+		out[i] = toupper(out[i]); // need to return hash in uppercase
+	}
 
 	lua_pushstring(L, out);
 
@@ -399,16 +406,13 @@ CKLBLuaEnv::command(lua_State *L)
 	if(lua.isString(1))
 	{
 		const char* syscommand_cmd = lua.getString(1);
-
 		if(*syscommand_cmd == 0) return 0;	// Do nothing if empty string
-
-		if(IsDebuggerPresent()) DebugBreak();
 	}
 
 	if(!lua.isNum(2))
 	{
 		lua.print_stack();
-		if(IsDebuggerPresent()) __debugbreak();
+		return 0;
 	}
     CKLBLuaTask * pTask = (CKLBLuaTask *)lua.getPointer(1);
     if(!pTask) return 0;

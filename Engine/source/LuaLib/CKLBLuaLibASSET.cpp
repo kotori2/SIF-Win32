@@ -21,7 +21,7 @@
 #include  <time.h>
 
 int assetSize = 0;
-char aes_key_client[32] = "";
+char aesKeyClient[32] = "";
 char sessionKey[32] = "";
 
 void pirntHex(char a[], int len) {
@@ -65,6 +65,7 @@ CKLBLuaLibASSET::addLibrary()
 	addFunction("Asset_getNMAsset",         CKLBLuaLibASSET::luaGetNMAsset); 
 	addFunction("Asset_setNMAsset",         CKLBLuaLibASSET::luaSetNMAsset);
 	addFunction("checkUncompleteUnzip",     CKLBLuaLibASSET::checkUncompleteUnzip);
+	addFunction("ASSET_enableTextureBorderPatch", CKLBLuaLibASSET::enableTextureBorderPatch);
 }
 
 s32
@@ -357,17 +358,16 @@ int asset_kill_download(lua_State* L)
 {
 	CLuaState lua(L);
 
-	DEBUG_PRINT("ASSET_killDownload");
 	lua.print_stack();
 	MicroDownload::DeleteAll();
+	lua.retBool(true);
 
-	return 0;
+	return 1;
 }
 
 s32
 CKLBLuaLibASSET::luaGetNMAssetSize(lua_State* L)
 {
-	DEBUG_PRINT("ASSET_GetNMAssetSize");
 	CLuaState lua(L);
 	lua.print_stack();
 	int count = lua.getInt(1);
@@ -378,7 +378,7 @@ CKLBLuaLibASSET::luaGetNMAssetSize(lua_State* L)
 	result[count] = '\0';
 	pirntHex(result, count);
 	assetSize = count;
-	memcpy(aes_key_client, result, 32);
+	memcpy(aesKeyClient, result, 32);
 	lua.retString(result);
 	return 1;
 }
@@ -419,4 +419,14 @@ CKLBLuaLibASSET::checkUncompleteUnzip(lua_State* L)
 	CLuaState lua(L);
 	lua.print_stack();
 	return 0;
+}
+
+s32
+CKLBLuaLibASSET::enableTextureBorderPatch(lua_State* L)
+{
+	CLuaState lua(L);
+	lua.print_stack();
+	int args = lua.numArgs();
+	lua.retBool(args == 1);
+	return 1;
 }

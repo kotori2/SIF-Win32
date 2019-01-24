@@ -44,6 +44,10 @@
 
 #include "TaskbarProgress.h"
 
+#include <openssl/rsa.h>
+#include <openssl/pem.h>
+#include <openssl/applink.c>
+
 #define IS_TOUCH ((GetMessageExtraInfo() & 0xFFFFFF00) == 0xFF515700)
 
 // #pragma comment(lib, "GameLibraryWin32.lib")
@@ -65,6 +69,8 @@ bool SIF_Win32_IS_SINGLECORE = false;
 bool OVERRIDE_IS_SINGECORE = false;
 char* XMC_Force = NULL;
 char* server_url_force = NULL;
+RSA* RSA_Public_Key = NULL;
+
 
 bool frame_limit = false;
 double frame_limit_time_ms = 0.01;
@@ -489,6 +495,20 @@ void SetFullscreenImpl(HWND hwnd_, bool fullscreen) {
 	}
 }
 
+RSA*
+Read_Public_Key()
+{
+	FILE * public_key_file = fopen("public.pem", "rb");
+
+	if (public_key_file == NULL)
+	{
+		return NULL;
+	}
+	RSA * rsa = RSA_new();
+	rsa = PEM_read_RSA_PUBKEY(public_key_file, &rsa, NULL, NULL);
+	fclose(public_key_file);
+	return rsa;
+}
 
 
 #ifdef _WIN32_WCE
@@ -721,6 +741,12 @@ int GameEngineMain(int argc, _TCHAR* argv[])
 	// sound initialize
 	SoundSystemInitFor_Win32();
 	CWin32AudioMgr::getInstance().init(hwnd);
+
+	// Read public key
+	RSA_Public_Key = Read_Public_Key();
+	if (RSA_Public_Key == NULL) {
+		klb_assertAlways("Could not read public key. Do 'public.pem' exist?");
+	}
 
 	/* set as foreground window to give this app focus in case it doesn't have it */
 	SetForegroundWindow(hwnd);

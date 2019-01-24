@@ -315,8 +315,14 @@ public:
 	inline
 	CKLBAbstractAsset*		
 				getAsset			(u16 assetID) {
-					klb_assert((assetID < m_maxAssetEntry), "invalid asset ID");
-					klb_assert(this->m_assetRecord[assetID].m_isFree == false, "already free");
+					if (assetID > m_maxAssetEntry) {
+						DEBUG_PRINT("invalid asset ID");
+						return NULL;
+					}
+					if (this->m_assetRecord[assetID].m_isFree != false) {
+						DEBUG_PRINT("already free");
+						return NULL;
+					}
 					return this->m_assetRecord[assetID].m_pAsset;
 				}
 

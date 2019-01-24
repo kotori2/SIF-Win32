@@ -30,6 +30,7 @@ public:
 	void addLibrary();
 private:
 	static int luaCalcPosition(lua_State * L);
+	static int luaUIShader(lua_State * L);
 public:
 	static void calcPosition(float x, float y, float w, float h, int mask, float* out_rx, float* out_ry);
 };
