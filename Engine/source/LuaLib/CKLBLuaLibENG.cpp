@@ -103,9 +103,9 @@ CKLBLuaLibENG::luaIsRelease(lua_State * L)
 	CLuaState lua(L);
 
 	int argc = lua.numArgs();
-	isRelease();
-	lua.retBoolean(true);  // You can't play live show in debug mode because it requires a carved lua module
-						   // change to 'false' if you need to get debug info from lua code
+	// isRelease();
+	lua.retBoolean(true);	// You can't play live show in debug mode because it requires a carved lua module
+							// change to 'false' if you need to get debug info from lua code
 	return 1;
 }
 

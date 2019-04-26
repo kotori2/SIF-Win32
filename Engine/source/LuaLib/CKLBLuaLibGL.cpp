@@ -85,6 +85,7 @@ int CKLBLuaLibGL::luaGLGetUnsafeAreaSize(lua_State * L) {
 
 int CKLBLuaLibGL::luaGLGetRenderingAPI(lua_State * L) {
 	return 0;
+}
 
 int CKLBLuaLibGL::luaGLBGBorder(lua_State * L) {
 	CLuaState lua(L);
