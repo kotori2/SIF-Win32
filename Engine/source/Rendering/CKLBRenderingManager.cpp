@@ -2257,6 +2257,10 @@ void CKLBPolyline::setColor			(u32 colorARGB) {
 	m_uiStatus			|= FLAG_COLORUPDATE;
 }
 
+bool CKLBPolygon::setMaxPointCount(u32 ptsCount) {
+	return true;
+}
+
 CKLBDynSprite::CKLBDynSprite()
 :CKLBSprite()
 ,m_pLocalColors(NULL)

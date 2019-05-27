@@ -17,6 +17,7 @@
 
 #include "CKLBLuaLibCONV.h"
 #include "CKLBUtility.h"
+#include <stdexcept>
 
 static CKLBLuaLibCONV libdef(0);
 

@@ -270,12 +270,30 @@ public:
 	CKLBPolyline();
 	~CKLBPolyline();
 
-	bool setMaxPointCount	(u32 ptsCount);
-	void setPointCount		(u32 ptsCount);
-	void setPoint			(u32 idx, float x, float y);
-	void setColor			(u32 color);
+	bool setMaxPointCount(u32 ptsCount);
+	void setPointCount(u32 ptsCount);
+	void setPoint(u32 idx, float x, float y);
+	void setColor(u32 color);
 protected:
-	void recomputeSegment	(u32 idxSegment);
+	void recomputeSegment(u32 idxSegment);
+
+	u16		m_maxPts;
+	float*	m_points;
+private:
+	void release();
+};
+
+class CKLBPolygon : public CKLBDynSprite {
+public:
+	CKLBPolygon();
+	~CKLBPolygon();
+
+	bool setMaxPointCount(u32 ptsCount);
+	void setPointCount(u32 ptsCount);
+	void setPoint(u32 idx, float x, float y);
+	void setColor(u32 color);
+protected:
+	void recomputeSegment(u32 idxSegment);
 
 	u16		m_maxPts;
 	float*	m_points;
