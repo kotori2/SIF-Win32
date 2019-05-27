@@ -58,6 +58,7 @@ bool xms_aleady_processed = false;
 extern char* XMC_Force;
 
 #ifdef _M_IX86
+#elif _M_AMD64
 #else
 #error Unsupported arch
 #endif

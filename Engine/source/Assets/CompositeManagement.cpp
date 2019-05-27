@@ -523,6 +523,7 @@ int CKLBCompositeAsset::readInt(long long integerVal)
 		m_pCurrInnerDef->radioID = (s32)integerVal;
 		break;
 	case PRIORITY_FIELD:
+		//DEBUG_PRINT("priority: %d", integerVal);
 		m_pCurrInnerDef->priority = (u32)integerVal;
 		break;
 	case X_FIELD:
@@ -816,31 +817,30 @@ int CKLBCompositeAsset::readInt(long long integerVal)
 		case 1:
 			m_pCurrInnerDef->x = 960 - m_pCurrInnerDef->x;
 			if (m_width){
-				DEBUG_PRINT("m_width: %d", m_width);
+				//DEBUG_PRINT("m_width: %d", m_width);
 				m_pCurrInnerDef->x -= m_width;
 			}
-			DEBUG_PRINT("X transformed to: %f", m_pCurrInnerDef->x);
+			//DEBUG_PRINT("X transformed to: %f", m_pCurrInnerDef->x);
 			break;
 		case 2:
-			DEBUG_PRINT("Y transformed from: %f", m_pCurrInnerDef->y);
+			//DEBUG_PRINT("Y transformed from: %f", m_pCurrInnerDef->y);
 			m_pCurrInnerDef->y = 640 - m_pCurrInnerDef->y;
 			if (m_pCurrInnerDef->height) {
-				DEBUG_PRINT("Height exist: %d", m_pCurrInnerDef->y);
 				m_pCurrInnerDef->y -= m_pCurrInnerDef->height;
 			}
-			DEBUG_PRINT("Y transformed to: %f", m_pCurrInnerDef->y);
+			//DEBUG_PRINT("Y transformed to: %f", m_pCurrInnerDef->y);
 			break;
 		case 3:
 			m_pCurrInnerDef->x = 960 - m_pCurrInnerDef->x;
 			if (m_pCurrInnerDef->width) {
 				m_pCurrInnerDef->x -= m_pCurrInnerDef->width;
 			}
-			DEBUG_PRINT("X transformed to: %f", m_pCurrInnerDef->x);
+			//DEBUG_PRINT("X transformed to: %f", m_pCurrInnerDef->x);
 			m_pCurrInnerDef->y = 640 - m_pCurrInnerDef->y;
 			if (m_pCurrInnerDef->height) {
 				m_pCurrInnerDef->y -= m_pCurrInnerDef->height;
 			}
-			DEBUG_PRINT("Y transformed to: %f", m_pCurrInnerDef->y);
+			//DEBUG_PRINT("Y transformed to: %f", m_pCurrInnerDef->y);
 			break;
 		default: DEBUG_PRINT("invalid anchor param %d", m_pCurrInnerDef->anchor);
 		}
@@ -1002,7 +1002,7 @@ int CKLBCompositeAsset::readString(const unsigned char * stringVal, size_t strin
 		break;
 	case NAME_FIELD:
 		m_pCurrInnerDef->name					= this->registerString((const char*)stringVal, stringLen, &err);
-		DEBUG_PRINT((const char*)stringVal);
+		//DEBUG_PRINT((const char*)stringVal);
 		break;
 	case FONT_NAME_FIELD:
 		m_pCurrInnerDef->fontName				= this->registerString((const char*)stringVal, stringLen, &err);
@@ -2255,6 +2255,7 @@ bool CKLBCompositeAsset::createSubTreeRecursive(u16 groupID, CKLBUITask* pParent
 					pNode = pNewNode;
 					pNewNode->setTag(templateDef);
 					pNewNode->setTranslate(templateDef->x,templateDef->y);
+					//DEBUG_PRINT("New subnode with x=%f, y=%f", templateDef->x, templateDef->y);
 					pNewNode->setScaleRotation(templateDef->xscale, templateDef->yscale,templateDef->rotation);
 				}
 			}

@@ -1,6 +1,8 @@
 // Implements Micro Download system
 
 #include <vector>
+#include <direct.h>
+#include <io.h>
 
 #include "CPFInterface.h"
 #include "CKLBScriptEnv.h"
@@ -62,9 +64,27 @@ void MicroDownload::MainLoop(int )
 			const char* target_file = ir.getFullPath(mdl->filename, &_);
 			u8* body = mdl->http->getRecvResource();
 
+			//Create folder recursively
+			for (int i = 2; i < strlen(target_file); i++) {
+				if (target_file[i] == '/') {
+					char* folder = (char*)malloc(sizeof(char) * i + 2);
+					strncpy(folder, target_file, i + 1);
+					folder[i + 1] = 0;
+					if (access(folder, 0)) {
+						DEBUG_PRINT("Create folder %s", folder);
+						if (_mkdir(folder) != 0) {
+							DEBUG_PRINT("Failed to create folder %s", folder);
+							break;
+						}
+					}
+					
+					KLBDELETEA(folder);
+				}
+			}
+
 			if(body == NULL)
 				goto error_mdl2;
-
+			
 			FILE* f = fopen(target_file, "wb");
 			
 			if(f == NULL)
@@ -87,6 +107,7 @@ void MicroDownload::MainLoop(int )
 			i = queue_list.erase(i);
 
 			error_mdl2:
+			DEBUG_PRINT("MDL Error 2 occured.");
 			scriptenv.call_Mdl(mdl->callback, NULL, mdl->url);
 
 			delete mdl;
