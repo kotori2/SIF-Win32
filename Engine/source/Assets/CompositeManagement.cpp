@@ -523,6 +523,7 @@ int CKLBCompositeAsset::readInt(long long integerVal)
 		m_pCurrInnerDef->radioID = (s32)integerVal;
 		break;
 	case PRIORITY_FIELD:
+		//DEBUG_PRINT("priority: %d", integerVal);
 		m_pCurrInnerDef->priority = (u32)integerVal;
 		break;
 	case X_FIELD:
@@ -2258,6 +2259,7 @@ bool CKLBCompositeAsset::createSubTreeRecursive(u16 groupID, CKLBUITask* pParent
 					pNode = pNewNode;
 					pNewNode->setTag(templateDef);
 					pNewNode->setTranslate(templateDef->x,templateDef->y);
+					//DEBUG_PRINT("New subnode with x=%f, y=%f", templateDef->x, templateDef->y);
 					pNewNode->setScaleRotation(templateDef->xscale, templateDef->yscale,templateDef->rotation);
 				}
 			}

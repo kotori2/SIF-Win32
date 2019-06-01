@@ -53,6 +53,11 @@ s32 CKLBHTTPInterface::HTTPConnectionThread(void * /*hThread*/, void * data)
 extern char sessionKey[64];
 extern char* XMC_Force;
 
+#ifdef _M_IX86
+#elif _M_AMD64
+#else
+#error Unsupported arch
+#endif
 void CKLBHTTPInterface::download() {
 	m_threadStop = 0;
 	m_pCurl      = curl_easy_init();

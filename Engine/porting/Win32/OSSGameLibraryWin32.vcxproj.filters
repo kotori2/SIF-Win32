@@ -590,6 +590,12 @@
     <ClInclude Include="..\..\source\HTTP\CKLBNetAPI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\source\UISystem\CKLBUIPolygon.h">
+      <Filter>Source Files\UISystem\Task</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\UISystem\CKLBUIPolyline2.h">
+      <Filter>Source Files\UISystem\Task</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\source\Animation\CKLBSystem.cpp">
@@ -1953,6 +1959,12 @@
     </ClCompile>
     <ClCompile Include="..\..\source\Core\HonokaMiku\TW_Decrypter.cc">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\UISystem\CKLBUIPolygon.cpp">
+      <Filter>Source Files\UISystem\Task</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\UISystem\CKLBUIPolyline2.cpp">
+      <Filter>Source Files\UISystem\Task</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -21,34 +21,34 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{32B44C90-DD31-45A5-B7D9-A31332A95918}</ProjectGuid>
     <RootNamespace>SampleProject</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug CSharp|Win32'">
     <CharacterSet>MultiByte</CharacterSet>
@@ -134,7 +134,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(SolutionDir)/Output/$(Configuration)/OSSGameLibraryWin32.lib;wsock32.lib;Ws2_32.lib;Wldap32.lib;opengl32.lib;glu32.lib;$(SolutionDir)/Platform/libs/glew32s.lib;$(SolutionDir)/Platform/libs/glutstatic.lib;$(SolutionDir)Lame\$(Configuration)\libmp3lame-static.lib;$(SolutionDir)Lame\$(Configuration)\libmpghip-static.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)/x64/$(Configuration)/OSSGameLibraryWin32.lib;wsock32.lib;Ws2_32.lib;Wldap32.lib;opengl32.lib;glu32.lib;$(SolutionDir)/Platform/libs/glew32s.lib;$(SolutionDir)/Platform/libs/glutstatic.lib;$(SolutionDir)Lame\$(Configuration)\libmp3lame-static.lib;$(SolutionDir)Lame\$(Configuration)\libmpghip-static.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>MSVCRT;glut32;libc</IgnoreSpecificDefaultLibraries>
       <AdditionalLibraryDirectories>$(ProjectDir)directx</AdditionalLibraryDirectories>
       <SubSystem>Console</SubSystem>
@@ -197,7 +197,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>$(SolutionDir)/Output/$(Configuration)/OSSGameLibraryWin32.lib;wsock32.lib;Ws2_32.lib;Wldap32.lib;opengl32.lib;glu32.lib;$(SolutionDir)/Platform/libs/glew32s.lib;$(SolutionDir)/Platform/libs/glutstatic.lib;$(SolutionDir)Lame\$(Configuration)\libmp3lame-static.lib;$(SolutionDir)Lame\$(Configuration)\libmpghip-static.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)/x64/$(Configuration)/OSSGameLibraryWin32.lib;wsock32.lib;Ws2_32.lib;Wldap32.lib;opengl32.lib;glu32.lib;$(SolutionDir)/Platform/libs/glew32s.lib;$(SolutionDir)/Platform/libs/glutstatic.lib;$(SolutionDir)Lame\$(Configuration)\libmp3lame-static.lib;$(SolutionDir)Lame\$(Configuration)\libmpghip-static.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>MSVCRT;glut32;libc</IgnoreSpecificDefaultLibraries>
       <AdditionalLibraryDirectories>$(ProjectDir)directx</AdditionalLibraryDirectories>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>

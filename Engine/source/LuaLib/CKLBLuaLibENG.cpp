@@ -103,9 +103,12 @@ CKLBLuaLibENG::luaIsRelease(lua_State * L)
 	CLuaState lua(L);
 
 	int argc = lua.numArgs();
-	// isRelease();
-	lua.retBoolean(true);	// You can't play live show in debug mode because it requires a carved lua module
-							// change to 'false' if you need to get debug info from lua code
+	if(argc != 0) {
+		lua.retBoolean(false);
+		return 1;
+	}
+
+	lua.retBoolean(isRelease());
 	return 1;
 }
 
@@ -185,6 +188,7 @@ bool CKLBLuaLibENG::isRelease()
 #ifndef IS_RELEASE
 #define IS_RELEASE false
 #endif
+/*
 	#if defined(DEBUG_MEMORY) || defined(DEBUG_PERFORMANCE) || defined(DEBUG_LUAEDIT) || defined(DEBUG_RT_CHECK) || defined(DEBUG_MENU)
 		IPlatformRequest& pfif = CPFInterface::getInstance().platform();
 		pfif.logging("===== Engine Compile Flags =====");
@@ -207,7 +211,7 @@ bool CKLBLuaLibENG::isRelease()
 		// return false;
 	#else
 		return true;
-	#endif
+	#endif*/
 		return SIF_Win32_IS_RELEASE;
 }
 
