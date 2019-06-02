@@ -51,7 +51,9 @@ private:
 	static int luaGLGetRenderingAPI			(lua_State * L);
 	static int luaGLIsSafeAreaScreen		(lua_State * L);
 	static int luaGLComputeMatrixFromToRect	(lua_State * L);
-	
+	static int luaGLBGBorder				(lua_State * L);
+	static int luaGLCreateShader			(lua_State * L);
+	static int luaGLDestroyShader			(lua_State * L);
 		
 public:
 	inline static bool GLClearColor(float r, float g, float b, float a) {

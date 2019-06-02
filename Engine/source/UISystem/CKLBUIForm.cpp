@@ -411,7 +411,7 @@ CKLBUIForm::commandUI(CLuaState& lua, int argc, int cmd)
 		break;
 	case UI_FORM_UPDATE_NODE:
 		{
-			if(argc < 4) {
+			if(argc < 4 || lua.isNil(4)) {
 				lua.retBoolean(false);
 				ret = 1;
 				break;

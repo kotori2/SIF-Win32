@@ -71,6 +71,7 @@ CKLBLuaLibUI::~CKLBLuaLibUI() {}
 void CKLBLuaLibUI::addLibrary()
 {
 	addFunction("UIF_Position", CKLBLuaLibUI::luaCalcPosition);
+	addFunction("UI_Shader",	CKLBLuaLibUI::luaUIShader);
 }
 
 int
@@ -95,6 +96,15 @@ CKLBLuaLibUI::luaCalcPosition(lua_State * L)
 	lua.retDouble(rx);
 	lua.retDouble(ry);
 	return 2;
+}
+
+int
+CKLBLuaLibUI::luaUIShader(lua_State * L)
+{
+	CLuaState lua(L);
+	lua.print_stack();
+	lua.retBool(false);
+	return 1;
 }
 
 void CKLBLuaLibUI::calcPosition(float x, float y, float w, float h, int mask, float* out_rx, float* out_ry)

@@ -50,11 +50,7 @@ s32 CKLBHTTPInterface::HTTPConnectionThread(void * /*hThread*/, void * data)
 	return 1;
 }
 
-#define XMESSAGECODE_LEN 11
-
-char xms_key[XMESSAGECODE_LEN];
 extern char sessionKey[64];
-bool xms_aleady_processed = false;
 extern char* XMC_Force;
 
 #ifdef _M_IX86
@@ -62,7 +58,6 @@ extern char* XMC_Force;
 #else
 #error Unsupported arch
 #endif
-
 void CKLBHTTPInterface::download() {
 	m_threadStop = 0;
 	m_pCurl      = curl_easy_init();

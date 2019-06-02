@@ -1,17 +1,17 @@
-﻿/* 
-   Copyright 2013 KLab Inc.
+﻿/*
+Copyright 2013 KLab Inc.
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 */
 #include "CKLBNetAPI.h"
 #include "CKLBLuaEnv.h"
@@ -24,24 +24,23 @@
 #include <ctype.h>
 #include <openssl/rsa.h>
 #include <openssl/evp.h>
-#include <openssl/pem.h>
 #include <openssl/aes.h>
 #include <openssl/conf.h>
 #include <openssl/err.h>
-#include <openssl/applink.c>
 #pragma comment(lib, "libeay32.lib")
 
 ;
 
 static int fail_times = 0;
 
-bool authkey;
+bool authkey = false;
 
 char iv[32] = "";
 extern char sessionKey[32];
+extern RSA * RSA_Public_Key;
+extern char aesKeyClient[32];
 char sessionKey_[32];
 bool sp = false;
-extern char aes_key_client[32];
 
 enum {
 	// Command Values
@@ -56,86 +55,70 @@ enum {
 	NETAPI_GEN_CMDNUMID,		// create commandNum string in data. possibility unused
 };
 
-RSA * createRSAWithFilename(char * filename)
-{
-	FILE * fp = fopen(filename, "rb");
-
-	if (fp == NULL)
-	{
-		printf("Unable to open file %s \n", filename);
-		return NULL;
-	}
-	RSA *rsa = RSA_new();
-
-	rsa = PEM_read_RSA_PUBKEY(fp, &rsa, NULL, NULL);
-
-	return rsa;
-}
-
 static IFactory::DEFCMD cmd[] = {
-	{"NETAPI_STARTUP",					NETAPI_STARTUP					},
-	{"NETAPI_LOGIN",					NETAPI_LOGIN					},
-	{"NETAPI_LOGOUT",					NETAPI_LOGOUT					},
-	{"NETAPI_SEND",						NETAPI_SEND						},
-    {"NETAPI_CANCEL",					NETAPI_CANCEL					},
-	{"NETAPI_CANCEL_ALL",				NETAPI_CANCEL_ALL				},
-	{"NETAPI_WATCH_MAINTENANCE",		NETAPI_WATCH_MAINTENANCE		},
-	{"NETAPI_DEBUG_HDR",				NETAPI_DEBUG_HDR				},
-	{"NETAPI_GEN_CMDNUMID",				NETAPI_GEN_CMDNUMID				},
+	{ "NETAPI_STARTUP",					NETAPI_STARTUP },
+	{ "NETAPI_LOGIN",					NETAPI_LOGIN },
+	{ "NETAPI_LOGOUT",					NETAPI_LOGOUT },
+	{ "NETAPI_SEND",						NETAPI_SEND },
+	{ "NETAPI_CANCEL",					NETAPI_CANCEL },
+	{ "NETAPI_CANCEL_ALL",				NETAPI_CANCEL_ALL },
+	{ "NETAPI_WATCH_MAINTENANCE",		NETAPI_WATCH_MAINTENANCE },
+	{ "NETAPI_DEBUG_HDR",				NETAPI_DEBUG_HDR },
+	{ "NETAPI_GEN_CMDNUMID",				NETAPI_GEN_CMDNUMID },
 
 	//
 	// Callback constants
 	//
-	{"NETAPIMSG_CONNECTION_CANCELED",	NETAPIMSG_CONNECTION_CANCELED	},
-	{"NETAPIMSG_CONNECTION_FAILED",		NETAPIMSG_CONNECTION_FAILED		},
-	{"NETAPIMSG_INVITE_FAILED",			NETAPIMSG_INVITE_FAILED			},
-	{"NETAPIMSG_STARTUP_FAILED",		NETAPIMSG_STARTUP_FAILED		},
-	{"NETAPIMSG_SERVER_TIMEOUT",		NETAPIMSG_SERVER_TIMEOUT		},
-	{"NETAPIMSG_REQUEST_FAILED",		NETAPIMSG_REQUEST_FAILED		},
-	{"NETAPIMSG_LOGIN_FAILED",			NETAPIMSG_LOGIN_FAILED			},
-	{"NETAPIMSG_SERVER_ERROR",			NETAPIMSG_SERVER_ERROR			},
-	{"NETAPIMSG_UNKNOWN",				NETAPIMSG_UNKNOWN				},
-	{"NETAPIMSG_LOGIN_SUCCESS",			NETAPIMSG_LOGIN_SUCCESS			},
-	{"NETAPIMSG_REQUEST_SUCCESS",		NETAPIMSG_REQUEST_SUCCESS		},
-	{"NETAPIMSG_STARTUP_SUCCESS",		NETAPIMSG_STARTUP_SUCCESS		},
-	{"NETAPIMSG_INVITE_SUCCESS",		NETAPIMSG_INVITE_SUCCESS		},
-	{0, 0}
+	{ "NETAPIMSG_CONNECTION_CANCELED",	NETAPIMSG_CONNECTION_CANCELED },
+	{ "NETAPIMSG_CONNECTION_FAILED",		NETAPIMSG_CONNECTION_FAILED },
+	{ "NETAPIMSG_INVITE_FAILED",			NETAPIMSG_INVITE_FAILED },
+	{ "NETAPIMSG_STARTUP_FAILED",		NETAPIMSG_STARTUP_FAILED },
+	{ "NETAPIMSG_SERVER_TIMEOUT",		NETAPIMSG_SERVER_TIMEOUT },
+	{ "NETAPIMSG_REQUEST_FAILED",		NETAPIMSG_REQUEST_FAILED },
+	{ "NETAPIMSG_LOGIN_FAILED",			NETAPIMSG_LOGIN_FAILED },
+	{ "NETAPIMSG_SERVER_ERROR",			NETAPIMSG_SERVER_ERROR },
+	{ "NETAPIMSG_UNKNOWN",				NETAPIMSG_UNKNOWN },
+	{ "NETAPIMSG_LOGIN_SUCCESS",			NETAPIMSG_LOGIN_SUCCESS },
+	{ "NETAPIMSG_REQUEST_SUCCESS",		NETAPIMSG_REQUEST_SUCCESS },
+	{ "NETAPIMSG_STARTUP_SUCCESS",		NETAPIMSG_STARTUP_SUCCESS },
+	{ "NETAPIMSG_INVITE_SUCCESS",		NETAPIMSG_INVITE_SUCCESS },
+	{ 0, 0 }
 };
 
 static CKLBTaskFactory<CKLBNetAPI> factory("HTTP_API", CLS_KLBNETAPI, cmd);
 
 enum {
-	ARG_CALLBACK	= 5,
-	ARG_REQUIRE     = ARG_CALLBACK,
+	ARG_CALLBACK = 5,
+	ARG_REQUIRE = ARG_CALLBACK,
 };
 
 int map_netapi_success(int request_type)
 {
-	switch(request_type)
+	switch (request_type)
 	{
-		case NETAPI_STARTUP:
-			return NETAPIMSG_STARTUP_SUCCESS;
-		case NETAPI_LOGIN:
-			return NETAPIMSG_LOGIN_SUCCESS;
-		case NETAPI_SEND:
-			return NETAPIMSG_REQUEST_SUCCESS;
-		default:
-			return NETAPIMSG_UNKNOWN;
+	case NETAPI_STARTUP:
+		return NETAPIMSG_STARTUP_SUCCESS;
+	case NETAPI_LOGIN:
+		return NETAPIMSG_LOGIN_SUCCESS;
+	case NETAPI_SEND:
+		return NETAPIMSG_REQUEST_SUCCESS;
+	default:
+		return NETAPIMSG_UNKNOWN;
 	}
 }
 
 int map_netapi_fail(int request_type)
 {
-	switch(request_type)
+	switch (request_type)
 	{
-		case NETAPI_STARTUP:
-			return NETAPIMSG_STARTUP_FAILED;
-		case NETAPI_LOGIN:
-			return NETAPIMSG_LOGIN_FAILED;
-		case NETAPI_SEND:
-			return NETAPIMSG_REQUEST_FAILED;
-		default:
-			return NETAPIMSG_SERVER_ERROR;
+	case NETAPI_STARTUP:
+		return NETAPIMSG_STARTUP_FAILED;
+	case NETAPI_LOGIN:
+		return NETAPIMSG_LOGIN_FAILED;
+	case NETAPI_SEND:
+		return NETAPIMSG_REQUEST_FAILED;
+	default:
+		return NETAPIMSG_SERVER_ERROR;
 	}
 }
 
@@ -143,7 +126,7 @@ char* create_authorize_string(const char* consumerKey, int nonce, const char* to
 {
 	char* out = KLBNEWA(char, 256);
 
-	if(token)
+	if (token)
 		sprintf(out, "consumerKey=%s&timeStamp=%d&version=1.1&token=%s&nonce=%d", consumerKey, int(time(NULL)), token, nonce);
 	else
 		sprintf(out, "consumerKey=%s&timeStamp=%d&version=1.1&nonce=%d", consumerKey, int(time(NULL)), nonce);
@@ -302,13 +285,47 @@ char *base64_decode(const char *data)
 	return ret;
 }
 
+bool
+aesEncrypt(const char* plaintext, size_t plaintextLenght, const char* Key, const char* iv, char* ciphertext, int& ciphertextLenght)
+{
+	int tmp;
+	unsigned char* cipherTemp = (unsigned char*)calloc(1024, sizeof(unsigned char));
+
+	EVP_CIPHER_CTX* ctx;
+	if (!(ctx = EVP_CIPHER_CTX_new()))
+		return false;
+
+	if (false)
+	{
+		fail:
+			EVP_CIPHER_CTX_free(ctx);
+			return false;
+	}
+
+	// Encrypt the plaintext
+	if (EVP_EncryptInit_ex(ctx, EVP_aes_128_cbc(), NULL, (u8*)Key, (u8*)iv) == 0)
+		goto fail;
+	if (EVP_EncryptUpdate(ctx, cipherTemp, &ciphertextLenght, (u8*)plaintext, plaintextLenght) == 0)
+		goto fail;
+	if (EVP_EncryptFinal_ex(ctx, cipherTemp + ciphertextLenght, &tmp) == 0)
+		goto fail;
+
+	ciphertextLenght += tmp;
+	EVP_CIPHER_CTX_free(ctx); // Free CTX after using
+
+	memcpy(ciphertext, iv, 16);
+	memcpy(ciphertext + 16, cipherTemp, ciphertextLenght);
+	ciphertextLenght += 16;
+	return true;
+}
+
 int get_statuscode(CKLBJsonItem* response)
 {
 	int status_code = 0;
 
-	while(status_code == 0 && response != NULL)
+	while (status_code == 0 && response != NULL)
 	{
-		if(strcmp(response->key(), "status_code") == 0)
+		if (strcmp(response->key(), "status_code") == 0)
 		{
 			status_code = response->getInt();
 			break;
@@ -321,30 +338,30 @@ int get_statuscode(CKLBJsonItem* response)
 }
 
 CKLBNetAPI::CKLBNetAPI()
-: CKLBLuaTask           ()
-, m_http				(NULL)
-, m_timeout				(30000)
-, m_timestart			(0)
-, m_canceled			(false)
-, m_pRoot				(NULL)
-, m_callback			(NULL)
-, m_http_header_array	(NULL)
-, m_http_header_length	(0)
-, m_request_type		(-1)
-, m_nonce				(1)
-, m_netapi_phase		(0)
-, m_downloading			(false)
+	: CKLBLuaTask()
+	, m_http(NULL)
+	, m_timeout(30000)
+	, m_timestart(0)
+	, m_canceled(false)
+	, m_pRoot(NULL)
+	, m_callback(NULL)
+	, m_http_header_array(NULL)
+	, m_http_header_length(0)
+	, m_request_type(-1)
+	, m_nonce(1)
+	, m_netapi_phase(0)
+	, m_downloading(false)
 {
 	// Create the header array
 }
 
-CKLBNetAPI::~CKLBNetAPI() 
+CKLBNetAPI::~CKLBNetAPI()
 {
 	// Done in Die()
 }
 
-u32 
-CKLBNetAPI::getClassID() 
+u32
+CKLBNetAPI::getClassID()
 {
 	return CLS_KLBNETAPI;
 }
@@ -354,77 +371,33 @@ void CKLBNetAPI::startUp(int phase, int status_code)
 	CKLBNetAPIKeyChain& kc = CKLBNetAPIKeyChain::getInstance();
 
 	// Startup phase
-	switch(phase)
+	switch (phase)
 	{
 		case 0:
 		{
 			// Do additional request. login/startUp
 			char request_data[1024];
 			const char* form[2];
-			char* authorize = create_authorize_string(kc.getConsumerKey(), m_nonce, kc.setToken(m_pRoot->child()->child()->getString()));
-	
+			char* authorize = create_authorize_string(kc.getConsumerKey(), m_nonce, kc.getToken());
+
 			// Create request_data
-			char AESKey[32] = "";
-			extern char iv[32];
-			AES_KEY aes;
-			memcpy(AESKey, sessionKey, 16);
-			
-			//encrypt login_key
-			int len_login_key = strlen(kc.getLoginKey());
-			char login_key[512] = "";
-			char login_passwd[512] = "";
-			char iv_[32] = "";
-			for (int i = 0; i < 16; i++)
-				iv_[i] = iv[i];
+			int loginKeyLen, loginPassLen;
+			char loginKey[512] = "";
+			char loginPasswd[512] = "";
 
-			int len_login_key_enc;
-			{
-				/* Initialise the library */
-				OpenSSL_add_all_algorithms();
-				EVP_CIPHER_CTX ctx;
-				EVP_CIPHER_CTX_init(&ctx);
-
-				/* Encrypt the plaintext */
-				int rv, ciphertext_len, tmp;
-				rv = EVP_EncryptInit_ex(&ctx, EVP_aes_128_cbc(), NULL, (unsigned char*)AESKey, (unsigned char*)iv_);
-				rv = EVP_EncryptUpdate(&ctx, (unsigned char*)login_key, &ciphertext_len, (unsigned char*)kc.getLoginKey(), len_login_key);
-				rv = EVP_EncryptFinal_ex(&ctx, (unsigned char*)login_key + ciphertext_len, &tmp);
-				ciphertext_len += tmp;
-				DEBUG_PRINT("Encrypted login_Key by EVP: %s, length: %d", base64_encode((char*)login_key, ciphertext_len), ciphertext_len);
-				len_login_key_enc = ciphertext_len + 16;
+			// Encrypt login key
+			for (int i = 0; i < 16; i++) {
+				iv[i] = rand();
 			}
-			
-			
-			char login_key_enc[1024];
-			memcpy(login_key_enc, iv, 16);
-			memcpy(login_key_enc + 16, login_key, len_login_key_enc - 16);
+			if (aesEncrypt(kc.getLoginKey(), strlen(kc.getLoginKey()), sessionKey, iv, loginKey, loginKeyLen) == false) klb_assertAlways("Error in AES encryption");
 
-			//encrypt login_passwd
-			int len_login_passwd = strlen(kc.getLoginPw());
-			for (int i = 0; i < 16; i++)
-				iv_[i] = iv[i];
-
-			/* Initialise the library */
-			OpenSSL_add_all_algorithms();
-			EVP_CIPHER_CTX ctx;
-			EVP_CIPHER_CTX_init(&ctx);
-
-			int len_login_passwd_enc;
-			{
-				/* Encrypt the plaintext */
-				int rv, ciphertext_len, tmp;
-				rv = EVP_EncryptInit_ex(&ctx, EVP_aes_128_cbc(), NULL, (unsigned char*)AESKey, (unsigned char*)iv_);
-				rv = EVP_EncryptUpdate(&ctx, (unsigned char*)login_passwd, &ciphertext_len, (unsigned char*)kc.getLoginPw(), len_login_passwd);
-				rv = EVP_EncryptFinal_ex(&ctx, (unsigned char*)login_passwd + ciphertext_len, &tmp);
-				ciphertext_len += tmp;
-				DEBUG_PRINT("Encrypted login_passwd by EVP: %s, length: %d", base64_encode((char*)login_passwd, ciphertext_len), ciphertext_len);
-				len_login_passwd_enc = ciphertext_len + 16;
+			// Encrypt login passwd
+			for (int i = 0; i < 16; i++) {
+				iv[i] = rand();
 			}
-			
-			char login_passwd_enc[1024];
-			memcpy(login_passwd_enc, iv, 16);
-			memcpy(login_passwd_enc + 16, login_passwd, len_login_passwd_enc - 16);
-			sprintf(request_data, "request_data={\"login_key\": \"%s\",\"login_passwd\": \"%s\"}", base64_encode(login_key_enc, len_login_key_enc), base64_encode(login_passwd_enc, len_login_passwd_enc));
+			if (aesEncrypt(kc.getLoginPw(), strlen(kc.getLoginPw()), sessionKey, iv, loginPasswd, loginPassLen) == false) klb_assertAlways("Error in AES encryption");
+
+			sprintf(request_data, "request_data={\"login_key\": \"%s\",\"login_passwd\": \"%s\"}", base64_encode(loginKey, loginKeyLen), base64_encode(loginPasswd, loginPassLen));
 			form[0] = request_data;
 			form[1] = NULL;
 
@@ -450,38 +423,6 @@ void CKLBNetAPI::startUp(int phase, int status_code)
 		}
 		case 1:
 		{
-			/*
-			// Do additional request. login/startWithoutInvite
-			char request_data[256];
-			const char* form[2];
-			char* authorize = create_authorize_string(kc.getConsumerKey(), m_nonce, kc.getToken());
-	
-			// Create request_data
-			sprintf(request_data, "request_data={\"login_key\":\"%s\",\"login_passwd\":\"%s\"}", kc.getLoginKey(), kc.getLoginPw());
-			form[0] = request_data;
-			form[1] = NULL;
-
-			// Reuse m_http
-			NetworkManager::releaseConnection(m_http);
-			m_http = NetworkManager::createConnection();
-			m_http->reuse();
-			m_http->setForm(form);
-			set_header(m_http, authorize);
-
-			// Send
-			char URL[MAX_PATH];
-
-			sprintf(URL, "%s/login/startWithoutInvite", kc.getURL());
-			m_http->httpPOST(URL, false);
-
-			// Set values
-			m_netapi_phase++;
-			m_timestart = 0;			// Reset
-
-			KLBDELETEA(authorize);
-			return;*/
-
-			// Startup OK.
 			lua_callback(NETAPIMSG_STARTUP_SUCCESS, status_code, m_pRoot);
 			NetworkManager::releaseConnection(m_http);
 			kc.setToken(NULL);
@@ -515,131 +456,84 @@ void CKLBNetAPI::login(int phase, int status_code)
 	CKLBNetAPIKeyChain& kc = CKLBNetAPIKeyChain::getInstance();
 	switch (phase)
 	{
-	case 0:
-	{
-		char request_data[512];
-		char country_code[4];
-		const char* form[2];
-		char* authorize = create_authorize_string(kc.getConsumerKey(), m_nonce, kc.setToken(m_pRoot->child()->child()->getString()));
-
-		// Request data
-		GetLocaleInfoA(LOCALE_USER_DEFAULT, LOCALE_SISO3166CTRYNAME, country_code, 4);
-		char AESKey[32] = "";
-		//extern char iv[32];
-		AES_KEY aes;
-		memcpy(AESKey, sessionKey, 16);
-
-		//encrypt login_key
-		int len_login_key = strlen(kc.getLoginKey());
-		char login_key[512] = "";
-		char login_passwd[512] = "";
-		char iv_[32] = "";
-		for (int i = 0; i < 16; i++)
-			iv_[i] = iv[i];
-
-		int len_login_key_enc;
+		case 0:
 		{
-			/* Initialise the library */
-			OpenSSL_add_all_algorithms();
-			EVP_CIPHER_CTX ctx;
-			EVP_CIPHER_CTX_init(&ctx);
+			char request_data[512];
+			const char* form[2];
+			char* authorize = create_authorize_string(kc.getConsumerKey(), m_nonce, kc.setToken(m_pRoot->child()->child()->getString()));
 
-			/* Encrypt the plaintext */
-			int rv, ciphertext_len, tmp;
-			rv = EVP_EncryptInit_ex(&ctx, EVP_aes_128_cbc(), NULL, (unsigned char*)AESKey, (unsigned char*)iv_);
-			rv = EVP_EncryptUpdate(&ctx, (unsigned char*)login_key, &ciphertext_len, (unsigned char*)kc.getLoginKey(), len_login_key);
-			rv = EVP_EncryptFinal_ex(&ctx, (unsigned char*)login_key + ciphertext_len, &tmp);
-			ciphertext_len += tmp;
-			DEBUG_PRINT("Encrypted login_Key by EVP: %s, length: %d", base64_encode((char*)login_key, ciphertext_len), ciphertext_len);
-			len_login_key_enc = ciphertext_len + 16;
+			int loginKeyLen, loginPassLen;
+			char loginKey[512] = "";
+			char loginPasswd[512] = "";
+
+			// Encrypt login key
+			for (int i = 0; i < 16; i++) {
+				iv[i] = rand();
+			}
+			if (aesEncrypt(kc.getLoginKey(), strlen(kc.getLoginKey()), sessionKey, iv, loginKey, loginKeyLen) == false) klb_assertAlways("Error in AES encryption");
+
+			// Encrypt login passwd
+			for (int i = 0; i < 16; i++) {
+				iv[i] = rand();
+			}
+			if (aesEncrypt(kc.getLoginPw(), strlen(kc.getLoginPw()), sessionKey, iv, loginPasswd, loginPassLen) == false) klb_assertAlways("Error in AES encryption");
+
+			sprintf(request_data, "request_data={\"login_key\": \"%s\",\"login_passwd\": \"%s\"}", base64_encode(loginKey, loginKeyLen), base64_encode(loginPasswd, loginPassLen));
+			form[0] = request_data;
+			form[1] = NULL;
+
+			// create new HTTP
+			NetworkManager::releaseConnection(m_http);
+			m_http = NetworkManager::createConnection();
+			m_http->reuse();
+			m_http->setForm(form);
+			set_header(m_http, authorize);
+
+			// send
+			char url[MAX_PATH];
+			sprintf(url, "%s/login/login", kc.getURL());
+			m_http->httpPOST(url, false);
+
+			// Set values
+			m_netapi_phase++;
+			m_timestart = 0;			// Reset
+
+			KLBDELETEA(authorize);
+			return;
 		}
-
-
-		char login_key_enc[1024];
-		memcpy(login_key_enc, iv, 16);
-		memcpy(login_key_enc + 16, login_key, len_login_key_enc - 16);
-
-		//encrypt login_passwd
-		int len_login_passwd = strlen(kc.getLoginPw());
-		for (int i = 0; i < 16; i++)
-			iv_[i] = iv[i];
-
-		/* Initialise the library */
-		OpenSSL_add_all_algorithms();
-		EVP_CIPHER_CTX ctx;
-		EVP_CIPHER_CTX_init(&ctx);
-
-		int len_login_passwd_enc;
+		case 1:
 		{
-			/* Encrypt the plaintext */
-			int rv, ciphertext_len, tmp;
-			rv = EVP_EncryptInit_ex(&ctx, EVP_aes_128_cbc(), NULL, (unsigned char*)AESKey, (unsigned char*)iv_);
-			rv = EVP_EncryptUpdate(&ctx, (unsigned char*)login_passwd, &ciphertext_len, (unsigned char*)kc.getLoginPw(), len_login_passwd);
-			rv = EVP_EncryptFinal_ex(&ctx, (unsigned char*)login_passwd + ciphertext_len, &tmp);
-			ciphertext_len += tmp;
-			DEBUG_PRINT("Encrypted login_passwd by EVP: %s, length: %d", base64_encode((char*)login_passwd, ciphertext_len), ciphertext_len);
-			len_login_passwd_enc = ciphertext_len + 16;
+			// Login OK
+			char user_id[16];
+
+			// Find status code
+
+			if ((status_code = get_statuscode(m_pRoot->child())) == 200)
+			{
+				kc.setToken(m_pRoot->child()->child()->getString());	// Authorize token
+
+				sprintf(user_id, "%d", m_pRoot->child()->child()->next()->getInt());
+				kc.setUserID(user_id);	// User ID
+
+				NetworkManager::releaseConnection(m_http);	// Release it first before calling lua callback.
+				m_http = NULL;
+				m_request_type = (-1);
+				m_netapi_phase = 0;
+
+				lua_callback(NETAPIMSG_LOGIN_SUCCESS, status_code, m_pRoot, 1);
+			}
+			else
+			{
+				NetworkManager::releaseConnection(m_http);	// Release it first before calling lua callback.
+				m_http = NULL;
+				m_request_type = (-1);
+				m_netapi_phase = 0;
+
+				lua_callback(NETAPIMSG_LOGIN_FAILED, 200, m_pRoot, 1);
+			}
+
+			return;
 		}
-
-		char login_passwd_enc[1024];
-		memcpy(login_passwd_enc, iv, 16);
-		memcpy(login_passwd_enc + 16, login_passwd, len_login_passwd_enc - 16);
-		sprintf(request_data, "request_data={\"login_key\": \"%s\",\"login_passwd\": \"%s\",\"devtoken\":\"APA91bGJEKHGnfimcCaqSdq09geZ3fsWm-asqIBjOjrPGLAsdQXm_sl2xtBv55SNuvaPHCIzobN4oUI8wSNTcT5JVovXDhuEJa5tXH7iejQUXJaqxzGcM47yUjswewBbTGR9ZWYSvmYo\"}", base64_encode(login_key_enc, len_login_key_enc), base64_encode(login_passwd_enc, len_login_passwd_enc));
-		form[0] = request_data;
-		form[1] = NULL;
-
-		// create new HTTP
-		NetworkManager::releaseConnection(m_http);
-		m_http = NetworkManager::createConnection();
-		m_http->reuse();
-		m_http->setForm(form);
-		set_header(m_http, authorize);
-
-		// send
-		char url[MAX_PATH];
-		sprintf(url, "%s/login/login", kc.getURL());
-		m_http->httpPOST(url, false);
-
-		// Set values
-		m_netapi_phase++;
-		m_timestart = 0;			// Reset
-
-		KLBDELETEA(authorize);
-		return;
-	}
-	case 1:
-	{
-		// Login OK
-		char user_id[16];
-
-		// Find status code
-
-		if ((status_code = get_statuscode(m_pRoot->child())) == 200)
-		{
-			kc.setToken(m_pRoot->child()->child()->getString());	// Authorize token
-
-			sprintf(user_id, "%d", m_pRoot->child()->child()->next()->getInt());
-			kc.setUserID(user_id);	// User ID
-
-			NetworkManager::releaseConnection(m_http);	// Release it first before calling lua callback.
-			m_http = NULL;
-			m_request_type = (-1);
-			m_netapi_phase = 0;
-
-			lua_callback(NETAPIMSG_LOGIN_SUCCESS, status_code, m_pRoot, 1);
-		}
-		else
-		{
-			NetworkManager::releaseConnection(m_http);	// Release it first before calling lua callback.
-			m_http = NULL;
-			m_request_type = (-1);
-			m_netapi_phase = 0;
-
-			lua_callback(NETAPIMSG_LOGIN_FAILED, status_code, m_pRoot, 1);
-		}
-
-		return;
-	}
 	}
 }
 
@@ -666,60 +560,30 @@ void CKLBNetAPI::request_authkey(int timeout)
 	m_timestart = 0;
 	char request_data[1024];
 	const char* form[2];
-	//Load public key
-	RSA * rsa = createRSAWithFilename("public.pem");
-	char str[2];
-	
-	char AESKey2[32] = "";
-	//Generate AES key and iv.
 
+	// Generate iv
 	for (int i = 0; i < 16; i++) {
-		itoa(rand() % 10, str, 10);
-		strcat(iv, str);
+		iv[i] = aesKeyClient[i + 16];
 	}
-	DEBUG_PRINT("Got iv: %s", iv);
 
-	//Generate auth data
-	const char dev_data[] = "{\"Rating\":\"0\",\"Detail\" : \"This is a iOS device\"}";
+	// Generate auth data
+	const char dev_data[] = "{\"Rating\":\"0\",\"Detail\" : \"This is a Android device\"}";
 	char auth_data[2048] = "";
-	unsigned char* auth_data_enc = (unsigned char*)calloc(1024, sizeof(unsigned char));
 	sprintf(auth_data, "{ \"1\":\"%s\",\"2\": \"%s\", \"3\": \"%s\" }", kc.getLoginKey(), kc.getLoginPw(), base64_encode(dev_data, strlen(dev_data)));
 
-	//Encrypt dummy token
+	// Encrypt dummy token
 	unsigned char dummy_token[2048] = "";
-	RSA_public_encrypt(strlen(aes_key_client), (unsigned char *)aes_key_client, dummy_token, rsa, RSA_PKCS1_PADDING);
+	RSA_public_encrypt(32, (unsigned char *)aesKeyClient, dummy_token, RSA_Public_Key, RSA_PKCS1_PADDING);
 
-	//Encrypt auth data
-	AES_KEY aes;
-	strncpy(AESKey2, aes_key_client, 16);
-	DEBUG_PRINT("Length of AESKey2: %d",(int)strlen((char*)AESKey2));
-	AES_set_encrypt_key((unsigned char*)AESKey2, 128, &aes);
-	int len = strlen(auth_data);
-	char iv_[32] = "";
-	for (int i = 0; i < 16; i++)
-		iv_[i] = iv[i];
+	// Encrypt auth_data
+	char auth_data_enc[2048];
+	int auth_data_enc_l;
+	if (aesEncrypt(auth_data, strlen(auth_data), aesKeyClient, iv, auth_data_enc, auth_data_enc_l) == false) klb_assertAlways("Error in AES encryption");
 
-	/* Initialise the library */
-	OpenSSL_add_all_algorithms();
-	EVP_CIPHER_CTX ctx;
-	EVP_CIPHER_CTX_init(&ctx);
-
-	/* Encrypt the plaintext */
-	int rv, ciphertext_len, tmp;
-	rv = EVP_EncryptInit_ex(&ctx, EVP_aes_128_cbc(), NULL, (unsigned char*)AESKey2, (unsigned char*)iv_);
-	rv = EVP_EncryptUpdate(&ctx, auth_data_enc, &ciphertext_len, (unsigned char*)auth_data, len);
-	rv = EVP_EncryptFinal_ex(&ctx, auth_data_enc + ciphertext_len, &tmp);
-	ciphertext_len += tmp;
-	DEBUG_PRINT("Encrypted data by EVP: %s, length: %d", base64_encode((char*)auth_data_enc, ciphertext_len), ciphertext_len);
-	
-	char auth_data_enc_[1024];
-	memcpy(auth_data_enc_, iv, 16);
-	memcpy(auth_data_enc_ + 16, auth_data_enc, ciphertext_len);
-	sprintf(request_data,"request_data={\"dummy_token\":\"%s\",\"auth_data\":\"%s\"}", base64_encode((char*)dummy_token, 128), base64_encode(auth_data_enc_, ciphertext_len + 16));
+	sprintf(request_data, "request_data={\"dummy_token\":\"%s\",\"auth_data\":\"%s\"}", base64_encode((char*)dummy_token, 128), base64_encode(auth_data_enc, auth_data_enc_l));
 	form[0] = request_data;
 	form[1] = NULL;
 	m_http->setForm(form);
-	DEBUG_PRINT("Generated sessionKey: %s",base64_encode(sessionKey, 32));
 	authkey = true;
 	http->httpPOST(url, false);
 }
@@ -747,16 +611,15 @@ CKLBNetAPI::execute(u32 deltaT)
 	// Received data second
 	if (m_http->httpRECV() || (m_http->getHttpState() != -1)) {
 		// Get Data
-		u8* body	= m_http->getRecvResource();
-		u32 bodyLen	= body ? m_http->getSize() : 0;
-		
+		u8* body = m_http->getRecvResource();
+		u32 bodyLen = body ? m_http->getSize() : 0;
 		// Get Status Code
 		CKLBNetAPIKeyChain& kc = CKLBNetAPIKeyChain::getInstance();
 		int state = m_http->getHttpState();
 		bool invalid = ((state >= 400) && (state <= 599)) || (state == 204);
 		int msg = invalid == false ? NETAPIMSG_REQUEST_SUCCESS : NETAPIMSG_SERVER_ERROR;
 
-		if(m_http->isMaintenance())
+		if (m_http->isMaintenance())
 		{
 			NetworkManager::releaseConnection(m_http);
 			m_http = NULL;
@@ -770,10 +633,10 @@ CKLBNetAPI::execute(u32 deltaT)
 		// 
 		freeJSonResult();
 
-		if(bodyLen > 0) m_pRoot = getJsonTree((const char*)body, bodyLen);
+		if (bodyLen > 0) m_pRoot = getJsonTree((const char*)body, bodyLen);
 
 		/* Upps, server sends invalid JSON */
-		if(m_pRoot == NULL)
+		if (m_pRoot == NULL)
 		{
 			NetworkManager::releaseConnection(m_http);
 			m_http = NULL;
@@ -781,8 +644,16 @@ CKLBNetAPI::execute(u32 deltaT)
 
 			return;
 		}
-		
-		if(invalid == false)
+
+		// If bundle version is very outdated, server return error 720 on login/authkey
+		if (get_statuscode(m_pRoot->child()) != 200 && authkey) {
+			NetworkManager::releaseConnection(m_http);
+			m_http = NULL;
+			lua_callback(NETAPIMSG_SERVER_ERROR, state, NULL, m_nonce);
+			return;
+		}
+
+		if (invalid == false)
 		{
 			m_nonce++;	// Increase nonce if request success.
 
@@ -791,51 +662,32 @@ CKLBNetAPI::execute(u32 deltaT)
 			puts("\n*====Response Data====*");
 
 			if (authkey) {
+				kc.setToken(m_pRoot->child()->child()->getString());
 				char dummy_token[64] = "";
 				char dummy_token_[64] = "";
 				sprintf(dummy_token, "%s", m_pRoot->child()->child()->next()->getString());
-				DEBUG_PRINT("Got dummy_token from server: %s", dummy_token);
 				memcpy(dummy_token_, base64_decode(dummy_token), 32);
 				for (int i = 0; i < 32; i++) {
-					sessionKey[i] = aes_key_client[i] ^ dummy_token_[i];
+					sessionKey[i] = aesKeyClient[i] ^ dummy_token_[i];
 				}
-				DEBUG_PRINT("Got new sessionKey: %s", base64_encode(sessionKey, 32));
 				authkey = false;
 			}
 			DEBUG_PRINT("Current EndPoint: %s", kc.getEndPoint());
 			const char* endPoint = kc.getEndPoint();
-			/*if (sp) {
-				DEBUG_PRINT("resetting sessionKey");
-				memcpy(sessionKey_, sessionKey, 32);//上个endpoint是特殊值时恢复sessionKey
-				sp = false;
-			}*/
-			if (endPoint == NULL) {
-				endPoint = "";
-			}
-			if (strstr(endPoint, "/play") || strstr(endPoint, "/execute")) {
-				DEBUG_PRINT("SPECIAL ENDPOINT FOUND");
-				memcpy(sessionKey, sessionKey_, 32);
-				DEBUG_PRINT("%s", sessionKey_);
-				sp = true;
-			}
-			else {
-				DEBUG_PRINT("BACKUP: %s", sessionKey);
-				memcpy(sessionKey_, sessionKey, 32);//备份sessionKey
-			}
-			
-			if(m_request_type == NETAPI_STARTUP)
+
+			if (m_request_type == NETAPI_STARTUP)
 				return startUp(m_netapi_phase, state);
-			else if(m_request_type == NETAPI_LOGIN)
+			else if (m_request_type == NETAPI_LOGIN)
 				return login(m_netapi_phase, state);
-			
+
 
 			// Check if we're outdated
-			if(m_downloading == false)
+			if (m_downloading == false)
 			{
 				const char* server_ver[1];
-				if(m_http->hasHeader("Server-Version", server_ver))
+				if (m_http->hasHeader("Server-Version", server_ver))
 				{
-					if(strncmp(*server_ver, kc.getClient(), strlen(kc.getClient())))
+					if (strncmp(*server_ver, kc.getClient(), strlen(kc.getClient())))
 					{
 						// We need to download some data.
 						NetworkManager::releaseConnection(m_http);
@@ -867,10 +719,8 @@ CKLBNetAPI::execute(u32 deltaT)
 		return;
 	}
 
-	
-
 	if ((m_http->m_threadStop == 1) && (m_http->getHttpState() == -1)) {
-		if(fail_times < 5)
+		if (fail_times < 5)
 		{
 			fail_times++;
 			goto netapi_timeout;
@@ -882,7 +732,7 @@ CKLBNetAPI::execute(u32 deltaT)
 
 	// Time out third (after check that valid has arrived)
 	if (m_timestart >= m_timeout) {
-		netapi_timeout:
+	netapi_timeout:
 		lua_callback(NETAPIMSG_SERVER_TIMEOUT, -1, NULL, m_nonce);
 		NetworkManager::releaseConnection(m_http);
 		m_http = NULL;
@@ -909,7 +759,7 @@ CKLBNetAPI::freeJSonResult() {
 void
 CKLBNetAPI::freeHeader() {
 	if (m_http_header_array) {
-		for (u32 n=0; n < m_http_header_length; n++) {
+		for (u32 n = 0; n < m_http_header_length; n++) {
 			KLBDELETEA(m_http_header_array[n]);
 		}
 		KLBDELETEA(m_http_header_array);
@@ -917,23 +767,23 @@ CKLBNetAPI::freeHeader() {
 	}
 }
 
-CKLBNetAPI* 
-CKLBNetAPI::create( CKLBTask* pParentTask, 
-                    const char * callback) 
+CKLBNetAPI*
+CKLBNetAPI::create(CKLBTask* pParentTask,
+	const char * callback)
 {
 	CKLBNetAPI* pTask = KLBNEW(CKLBNetAPI);
-    if(!pTask) { return NULL; }
+	if (!pTask) { return NULL; }
 
-	if(!pTask->init(pParentTask, callback)) {
+	if (!pTask->init(pParentTask, callback)) {
 		KLBDELETE(pTask);
 		return NULL;
 	}
 	return pTask;
 }
 
-bool 
-CKLBNetAPI::init(	CKLBTask* pTask,
-					const char * callback) 
+bool
+CKLBNetAPI::init(CKLBTask* pTask,
+	const char * callback)
 {
 	m_callback = (callback) ? CKLBUtility::copyString(callback) : NULL;
 
@@ -950,11 +800,11 @@ CKLBNetAPI::initScript(CLuaState& lua)
 	int argc = lua.numArgs();
 	lua.print_stack();
 
-    if (argc < 7) { return false; }
+	if (argc < 7) { return false; }
 
 	CKLBNetAPIKeyChain& kc = CKLBNetAPIKeyChain::getInstance();
 
-	if(server_url_force)
+	if (server_url_force)
 		kc.setURL(server_url_force);
 	else
 		kc.setURL(lua.getString(1));
@@ -964,7 +814,7 @@ CKLBNetAPI::initScript(CLuaState& lua)
 	kc.setAppID(lua.getString(4));
 	kc.setRegion(lua.getString(7));
 
-	if(lua.isString(8))
+	if (lua.isString(8))
 		m_verup_callback = CKLBUtility::copyString(lua.getString(8));
 
 	fail_times = 0;
@@ -983,21 +833,6 @@ CKLBNetAPI::getJsonTree(const char * json_string, u32 dataLen)
 // authorize_string ends with NULL
 void CKLBNetAPI::set_header(CKLBHTTPInterface* http, const char* authorize_string)
 {
-	/*
-	API-Model: straightforward
-	Application-ID: %s
-	Authorize: authorize_string
-	Bundle-Version: getBundleVersion()
-	Client-Version: %s
-	Debug: 1
-	OS: Win32
-	OS-Version: %s
-	Platform-Type: 0 or 3?
-	Region: %s
-	Time-Zone: %s
-	User-ID: %s
-	*/
-
 	// Basic vars
 	CPFInterface& pfif = CPFInterface::getInstance();
 	CKLBNetAPIKeyChain& kc = CKLBNetAPIKeyChain::getInstance();
@@ -1016,27 +851,6 @@ void CKLBNetAPI::set_header(CKLBHTTPInterface* http, const char* authorize_strin
 	char* region = bundle_version + 256;
 	char* user_id = region + 128;
 
-	// Process OS and timezone
-	{
-		char* temp_os_version;
-		char* temp_time_zone;
-		size_t os_info_len = strlen(os_info);
-
-		memcpy(os_data, os_info, os_info_len + 1);
-
-		for(; *os_data != ';'; os_data++) {}
-
-		*os_data = 0;
-		temp_os_version = ++os_data;
-
-		for(; *os_data != ';'; os_data++) {}
-		*os_data = 0;
-		temp_time_zone = ++os_data;
-
-		sprintf(os_version, "OS-Version: %s", temp_os_version);
-		sprintf(time_zone, "Time-Zone: %s", "JST");
-	}
-
 	// Process authorize string
 	authorize = new char[1024];
 
@@ -1049,8 +863,8 @@ void CKLBNetAPI::set_header(CKLBHTTPInterface* http, const char* authorize_strin
 	// User-ID
 	{
 		const char* uid = kc.getUserID();
-		
-		if(uid == NULL)
+
+		if (uid == NULL)
 			user_id = NULL;
 		else
 			sprintf(user_id, "User-ID: %s", uid);
@@ -1067,9 +881,8 @@ void CKLBNetAPI::set_header(CKLBHTTPInterface* http, const char* authorize_strin
 	headers[7] = "OS-Version: Nexus 5 google hammerhead 4.4.4";
 	headers[8] = "Platform-Type: 2";
 	headers[9] = region;
-	headers[10] = time_zone;
-	headers[11] = user_id;
-	headers[12] = NULL;
+	headers[10] = user_id;
+	headers[11] = NULL;
 
 	http->setHeader(headers);
 
@@ -1082,7 +895,7 @@ CKLBNetAPI::commandScript(CLuaState& lua)
 {
 	int argc = lua.numArgs();
 
-	if(argc < 2) {
+	if (argc < 2) {
 		lua.retBoolean(false);
 		return 1;
 	}
@@ -1090,161 +903,178 @@ CKLBNetAPI::commandScript(CLuaState& lua)
 	int cmd = m_request_type = lua.getInt(2);
 	int ret = 1;
 
-	switch(cmd)
+	switch (cmd)
 	{
-		default:
-		{
-			lua.retBoolean(false);
-		}
-		break;
-		case NETAPI_STARTUP:
-		{
-			//
-			// 3. login_key
-			// 4. login_passwd
-			// 5. invite
-			// 6. timeout
-			//
-			if(argc < 4) lua.retBoolean(false);
-			else {
-				const char* user_id = lua.getString(3);
-				const char* password = lua.getString(4);
-				int timeout = 30000;
+	default:
+	{
+		lua.retBoolean(false);
+	}
+	break;
+	case NETAPI_STARTUP:
+	{
+		//
+		// 3. login_key
+		// 4. login_passwd
+		// 5. invite
+		// 6. timeout
+		//
+		if (argc < 4) lua.retBoolean(false);
+		else {
+			const char* user_id = lua.getString(3);
+			const char* password = lua.getString(4);
+			int timeout = 30000;
 
-				if(lua.isNum(6))
-					timeout = lua.getInt(6);
+			if (lua.isNum(6))
+				timeout = lua.getInt(6);
 
-				// Save credentials
-				CKLBNetAPIKeyChain& kc = CKLBNetAPIKeyChain::getInstance();
-				kc.setLoginKey(user_id);
-				kc.setLoginPwd(password);
-				
-				// Create HTTP
-				m_timeout = timeout;
-				m_timestart = 0;
-				request_authkey(timeout);
-
-				lua.retBoolean(true);
-			}
-		}
-		break;
-		case NETAPI_LOGIN:
-		{
-			//
-			// 3. login_key
-			// 4. login_passwd
-			// 5. timeout
-			//
+			// Save credentials
 			CKLBNetAPIKeyChain& kc = CKLBNetAPIKeyChain::getInstance();
-			const char* auth;
+			kc.setLoginKey(user_id);
+			kc.setLoginPwd(password);
 
-			kc.setLoginKey(lua.getString(3));
-			kc.setLoginPwd(lua.getString(4));
-
-			auth = create_authorize_string(kc.getConsumerKey(), m_nonce);
-
-			m_timeout = lua.getInt(5);
+			// Create HTTP
+			m_timeout = timeout;
 			m_timestart = 0;
-			
-			request_authkey(m_timeout);
+			request_authkey(timeout);
 
-			lua.retInt(m_nonce);
+			lua.retBoolean(true);
 		}
-		break;
-		case NETAPI_CANCEL:
-		case NETAPI_CANCEL_ALL:
-		{
-			if (m_http != NULL) {
-				m_canceled = true;
+	}
+	break;
+	case NETAPI_LOGIN:
+	{
+		//
+		// 3. login_key
+		// 4. login_passwd
+		// 5. timeout
+		//
+		CKLBNetAPIKeyChain& kc = CKLBNetAPIKeyChain::getInstance();
+		const char* auth;
+
+		kc.setLoginKey(lua.getString(3));
+		kc.setLoginPwd(lua.getString(4));
+
+		auth = create_authorize_string(kc.getConsumerKey(), m_nonce);
+
+		m_timeout = lua.getInt(5);
+		m_timestart = 0;
+
+		request_authkey(m_timeout);
+
+		lua.retInt(m_nonce);
+	}
+	break;
+	case NETAPI_CANCEL:
+	case NETAPI_CANCEL_ALL:
+	{
+		if (m_http != NULL) {
+			m_canceled = true;
+		}
+		lua.retBoolean(m_http != NULL);
+	}
+	break;
+	case NETAPI_SEND:
+	{
+		//
+		// 3. Request data table
+		// 4. End point URL. Defaults to "/api" if is nil
+		// 5. Timeout
+		// 6. Skip version check?
+		// 7. Absolute URL
+		//
+		CKLBNetAPIKeyChain& kc = CKLBNetAPIKeyChain::getInstance();
+		if (argc < 3 || argc > 9) {
+			lua.retBoolean(false);
+			DEBUG_PRINT("No enough argc or argc exceed 9!");
+		}
+		else {
+			DEBUG_PRINT("Sending API...");
+			char api[MAX_PATH];
+			const char* end_point = "/api";
+
+			if (lua.isString(4)) {
+				end_point = lua.getString(4);
+				kc.setEndPoint(end_point);
 			}
-			lua.retBoolean(m_http != NULL);
-		}
-		break;
-		case NETAPI_SEND:
-		{
-			//
-			// 3. Request data table
-			// 4. End point URL. Defaults to "/api" if is nil
-			// 5. Timeout
-			// 6. Skip version check?
-			// 7. Absolute URL
-			//
-			CKLBNetAPIKeyChain& kc = CKLBNetAPIKeyChain::getInstance();
-			if(argc < 3 || argc > 9) {
-				lua.retBoolean(false);
-				DEBUG_PRINT("No enough argc or argc exceed 9!");
+
+
+			if (lua.isBool(7) && lua.getBool(7))
+				memcpy(api, end_point, strlen(end_point) + 1);
+			else
+				sprintf(api, "%s%s", kc.getURL(), end_point);
+
+			// lua arg 9 can have key, that we will use for signing our message
+			if (lua.isString(9) && lua.getString(9)) {
+				memcpy(sessionKey, lua.getString(9), 32);
+				sp = true;
+			}
+			// if arg 9 is nil and sp is true, we need to restore our key from backup
+			else if (sp == true) {
+				memcpy(sessionKey, sessionKey_, 32);
+				sp = false;
+			}
+			// create backup of session key
+			else {
+				memcpy(sessionKey_, sessionKey, 32);
+			}
+
+			// Header list
+			const char** headers = NULL;
+			const char** values = NULL;
+			freeHeader();
+
+			// POST JSon payload
+			u32 send_json_size = 0;
+			const char* send_json = NULL;
+
+			m_http = NetworkManager::createConnection();
+
+			if (m_http) {
+
+				lua.retValue(3);
+				send_json = CKLBUtility::lua2json(lua, send_json_size);
+				lua.pop(1);
+
+				if (send_json) {
+					char* json;
+					const char * items[2];
+					const char* req = "request_data=";
+					const char* authorize = create_authorize_string(kc.getConsumerKey(), m_nonce, kc.getToken());
+					int send_json_length = strlen(send_json);
+					int req_length = strlen(req);
+
+					if (lua.isBool(6) == false || lua.getBool(6) == false)
+						m_downloading = false;
+
+					json = KLBNEWA(char, send_json_length + req_length + 1);
+					strcpy(json, req);
+					strcat(json, send_json);
+					items[0] = json;
+					items[1] = NULL;
+
+					set_header(m_http, authorize);
+					m_http->setForm(items);
+					m_http->httpPOST(api, false);
+
+					KLBDELETEA(json);
+					KLBDELETEA(authorize);
+				}
+				else {
+					m_http->httpGET(api, false);
+				}
+
+				m_timeout = lua.getInt(5);
+				m_timestart = 0;
+
+				lua.retInt(m_nonce);
 			}
 			else {
-				DEBUG_PRINT("Sending API...");
-				char api[MAX_PATH];
-				const char* end_point = "/api";
-
-				if (lua.isString(4)) {
-					end_point = lua.getString(4);
-					kc.setEndPoint(end_point);
-				}
-					
-
-				if(lua.isBool(7) && lua.getBool(7))
-					memcpy(api, end_point, strlen(end_point) + 1);
-				else
-					sprintf(api, "%s%s", kc.getURL(), end_point);
-
-				// Header list
-				const char** headers = NULL;
-				const char** values  = NULL;
-				freeHeader();
-
-				// POST JSon payload
-				u32 send_json_size = 0;
-				const char* send_json = NULL;
-
-				m_http = NetworkManager::createConnection();
-
-				if (m_http) {
-
-					lua.retValue(3);
-					send_json = CKLBUtility::lua2json(lua, send_json_size);
-					lua.pop(1);
-					
-					if (send_json) {
-						char* json;
-						const char * items[2];
-						const char* req = "request_data=";
-						const char* authorize = create_authorize_string(kc.getConsumerKey(), m_nonce, kc.getToken());
-						int send_json_length = strlen( send_json );
-						int req_length = strlen( req );
-
-						if(lua.isBool(6) == false || lua.getBool(6) == false)
-							m_downloading = false;
-
-						json = KLBNEWA( char , send_json_length+req_length+1 );
-						strcpy( json , req );
-						strcat( json , send_json );
-						items[0] = json;
-						items[1] = NULL;
-
-						set_header(m_http, authorize);
-						m_http->setForm(items);
-						m_http->httpPOST(api, false);
-
-						KLBDELETEA(json);
-						KLBDELETEA(authorize);
-					} else {
-						m_http->httpGET(api, false);
-					}
-
-					m_timeout	= lua.getInt(5);
-					m_timestart = 0;
-
-					lua.retInt(m_nonce);
-				} else {
-					// Connection creation failed.
-					lua.retBoolean(false);
-				}
+				// Connection creation failed.
+				lua.retBoolean(false);
 			}
 		}
-		break;
+	}
+	break;
 	}
 	return 1;
 }

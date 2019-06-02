@@ -51,7 +51,18 @@ CKLBLuaLibTASK::addLibrary()
 
 int
 CKLBLuaLibTASK::setMatrix(lua_State * L) {
-	return 0;
+	CLuaState lua(L);
+	lua.print_stack();
+	int argc = lua.numArgs();
+	if (argc >= 7) {
+		// TODO
+		lua.retBool(true);
+		return 1;
+	}
+	else {
+		lua.retBool(false);
+		return 0;
+	}
 }
 
 int

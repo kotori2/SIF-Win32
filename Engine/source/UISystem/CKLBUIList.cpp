@@ -931,6 +931,10 @@ CKLBUIList::cmdUpdateNode(CLuaState& lua, int argc)
 		lua.retBoolean(false);
 		return 1;
 	}
+	if (lua.isString(4) && lua.isNil(5)) {
+		lua.retBool(false);
+		return 1;
+	}
 	int index = lua.getInt(3);
 	// const char * name = lua.getString(4);
 	int subcmd = lua.getInt(5);
